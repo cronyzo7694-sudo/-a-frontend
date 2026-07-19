@@ -53,3 +53,10 @@ temp/
 
 # generated tree snapshot (optional)
 # PROJECT_TREE.txt
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
