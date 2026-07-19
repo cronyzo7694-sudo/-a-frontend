@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="512"
+     height="512"
+     viewBox="0 0 512 512">
+
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+
+  <!-- White Circle -->
+  <circle
+      cx="256"
+      cy="256"
+      r="214"
+      fill="#FFFFFF"/>
+
+  <!-- Blue Ring -->
+  <circle
+      cx="256"
+      cy="256"
+      r="214"
+      fill="none"
+      stroke="url(#g)"
+      stroke-width="20"/>
+
+  <!-- Exam Paper -->
+  <rect
+      x="155"
+      y="110"
+      width="202"
+      height="250"
+      rx="24"
+      fill="#FFFFFF"
+      stroke="#2563EB"
+      stroke-width="14"/>
+
+  <!-- Header -->
+  <line
+      x1="185"
+      y1="155"
+      x2="325"
+      y2="155"
+      stroke="#2563EB"
+      stroke-width="12"
+      stroke-linecap="round"/>
+
+  <line
+      x1="185"
+      y1="195"
+      x2="305"
+      y2="195"
+      stroke="#2563EB"
+      stroke-width="12"
+      stroke-linecap="round"/>
+
+  <!-- Large Check -->
+  <path
+      d="M190 270
+         L235 315
+         L325 225"
+      fill="none"
+      stroke="#2563EB"
+      stroke-width="22"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+
+</svg>

@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 40%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 40%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Dense enterprise tables feel */
+  table {
+    border-collapse: collapse;
+  }
+}
+
+/* MathJax spacing inside questions */
+.mjx-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Exam player lock scroll when needed */
+.exam-player-active {
+  overflow: hidden;
+}
+
+/* Palette button states */
+.palette-btn {
+  @apply w-10 h-10 rounded-md text-sm font-semibold flex items-center justify-center border transition-colors;
+}
+.palette-not-visited {
+  @apply bg-slate-200 text-slate-700 border-slate-300;
+}
+.palette-not-answered {
+  @apply bg-white text-red-600 border-red-400;
+}
+.palette-answered {
+  @apply bg-green-600 text-white border-green-700;
+}
+.palette-marked {
+  @apply bg-blue-600 text-white border-blue-700;
+}
+.palette-marked-answered {
+  @apply bg-amber-500 text-white border-amber-600;
+}
+.palette-current {
+  @apply ring-2 ring-offset-2 ring-blue-800;
+}
