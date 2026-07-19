@@ -1,0 +1,55 @@
+# --- Python ---
+backend/.venv/
+backend/**/__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# local DB + env secrets
+backend/*.db
+backend/**/*.db
+backend/.env
+backend/.env.local
+**/.env
+!**/.env.example
+
+# uploads (keep directory via .gitkeep)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# --- Node / frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/tsconfig.tsbuildinfo
+frontend/.env
+frontend/.env.local
+
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Logs / temp ---
+*.log
+tmp/
+temp/
+.cache/
+
+# generated tree snapshot (optional)
+# PROJECT_TREE.txt
