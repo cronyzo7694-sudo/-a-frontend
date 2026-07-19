@@ -5,7 +5,9 @@
  * --------------------------------------------
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+const API_BASE =
+  import.meta.env.VITE_API_URL?.trim() ||
+  (import.meta.env.PROD ? "https://a-backend-d689.onrender.com/api" : "/api");
 
 export class ApiError extends Error {
   status: number;
