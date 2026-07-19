@@ -35,6 +35,8 @@ async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const method = options.method || "GET";
+  const url = `${API_BASE}${path}`;
   const headers = new Headers(options.headers || {});
   if (!(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
@@ -42,7 +44,12 @@ async function request<T>(
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  console.log(`[api] -> ${method} ${url}`);
+  if (options.body && typeof options.body === "string") {
+    console.log(`[api] body ${options.body}`);
+  }
+
+  const res = await fetch(url, {
     ...options,
     headers,
   });
@@ -54,6 +61,9 @@ async function request<T>(
   } catch {
     data = text;
   }
+
+  console.log(`[api] <- ${res.status} ${method} ${url}`);
+  console.log(`[api] payload ${JSON.stringify(data)}`);
 
   if (!res.ok) {
     const msg =
