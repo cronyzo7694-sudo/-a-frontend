@@ -166,8 +166,8 @@ export function ExamsPage() {
       case "Updated":
         arr.sort(
           (a, b) =>
-            new Date(b.updated_at || 0).getTime() -
-            new Date(a.updated_at || 0).getTime()
+            new Date(b.created_at || 0).getTime() -
+            new Date(a.created_at || 0).getTime()
         );
         break;
       default: // Newest
@@ -353,12 +353,12 @@ export function ExamsPage() {
               const color = catColor(cat);
               const icon = iconSvg(cat);
               const isStarting = starting === exam.id;
-              const updatedAt = exam.updated_at
-                ? new Date(exam.updated_at)
+              const createdAt = exam.created_at
+                ? new Date(exam.created_at)
                 : null;
               const isNew =
-                updatedAt &&
-                Date.now() - updatedAt.getTime() < 7 * 24 * 3600 * 1000;
+                createdAt &&
+                Date.now() - createdAt.getTime() < 7 * 24 * 3600 * 1000;
 
               return (
                 <Link
