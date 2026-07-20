@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { examsApi } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/utils";
 
 export function ExamsPage() {
+  const [search, setSearch] = useState("");
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["exams"],
-    queryFn: () => examsApi.list("parent_id=null"),
+    queryKey: ["exams", search],
+    queryFn: () =>
+      examsApi.list(
+        `parent_id=null${search ? `&search=${encodeURIComponent(search)}` : ""}`
+      ),
   });
 
   if (isLoading) return <div>Loading exams…</div>;
@@ -24,6 +30,15 @@ export function ExamsPage() {
         <p className="text-sm text-muted-foreground">Choose a test and start when ready</p>
       </div>
 
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search exams... (e.g. SSC, IBPS, Railway)"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full max-w-md px-4 py-2 border rounded-lg"
+        />
+      </div>
       {items.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">
