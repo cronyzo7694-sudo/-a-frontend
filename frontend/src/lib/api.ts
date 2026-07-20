@@ -590,12 +590,110 @@ export const analyticsApi = {
   attempt: (attemptId: number) => api.get<AttemptAnalytics>(`/analytics/attempts/${attemptId}`),
 };
 
+// AI Knowledge Engine types
+export type KnowledgeQuestion = {
+  id: string;
+  qid: string;
+  raw_text: string;
+  normalized_question: string;
+  semantic_summary: string;
+  question_text: string;
+  question_type: string;
+  options: { option_key: string; option_text: string; is_correct?: boolean }[];
+  correct_answer: string | string[] | null;
+  explanation: string | null;
+  classification: {
+    subject: string | null;
+    chapter: string | null;
+    topic: string | null;
+    subtopic?: string | null;
+    micro_topic?: string | null;
+    concepts?: string[];
+    pattern?: string | null;
+    question_family?: string | null;
+    bloom_taxonomy?: string | null;
+    difficulty: string;
+    difficulty_score?: number;
+    expected_time_seconds?: number;
+  };
+  metadata: {
+    exam_name?: string | null;
+    exam_year?: number | null;
+    shift?: string | null;
+    source_book?: string | null;
+    page_number?: number | null;
+    source_type?: string;
+  };
+  tags: string[];
+  keywords: string[];
+  duplicate_info: {
+    is_duplicate: boolean;
+    duplicate_of: number | null;
+    fingerprint_hash: string;
+    semantic_hash: string;
+    similarity_score: number | null;
+  };
+  appearance_history: any[];
+  confidence_score: number;
+  needs_human_review?: boolean;
+  needs_review?: boolean;
+  review_reasons?: string[];
+  frontend_compatible?: any;
+};
+
+export type KnowledgeImportResult = {
+  message: string;
+  knowledge_job?: any;
+  job?: any;
+  total_blocks_found: number;
+  questions_created: number;
+  duplicates_found: number;
+  needs_review: number;
+  created_ids?: number[];
+  duplicate_ids?: number[];
+  needs_review_ids?: number[];
+  errors: any[];
+  success_count: number;
+  error_count: number;
+  duplicate_count: number;
+  questions?: KnowledgeQuestion[];
+  preview?: any[];
+  filename?: string;
+  extracted_preview?: string;
+};
+
 export const importsApi = {
   json: (payload: Record<string, unknown>) =>
     api.post<any>("/imports/questions/json", payload),
   csv: (form: FormData) => api.post<any>("/imports/questions/csv", form),
   template: () => api.get<{ content: string; filename: string }>("/imports/questions/template"),
   jobs: () => api.get<{ items: any[]; total: number }>("/imports/jobs"),
+  // Knowledge Engine - Internal Brain - ANY format
+  aiText: (payload: {
+    raw_text: string;
+    source_book?: string;
+    exam_name?: string;
+    exam_year?: number;
+    source_type?: string;
+    marks?: number;
+    negative_marks?: number;
+    skip_duplicates?: boolean;
+    preview?: boolean;
+  }) => api.post<KnowledgeImportResult>("/imports/questions/ai", payload),
+  aiTextPreview: (payload: {
+    raw_text: string;
+    source_book?: string;
+    exam_name?: string;
+    source_type?: string;
+  }) => api.post<KnowledgeImportResult>("/imports/questions/ai/preview", { ...payload, preview: true }),
+  aiFile: (form: FormData) => api.post<KnowledgeImportResult>("/imports/questions/ai/file", form),
+  knowledgeJobs: () => api.get<{ items: any[]; total: number }>("/imports/knowledge/jobs"),
+  knowledgeJob: (id: number) => api.get<any>(`/imports/knowledge/jobs/${id}`),
+  questionAppearances: (questionId: number) =>
+    api.get<{ question_id: number; qid: string | null; items: any[]; total: number }>(
+      `/imports/knowledge/question/${questionId}/appearances`
+    ),
+  knowledgeStats: () => api.get<any>("/imports/knowledge/reindex"),
 };
 
 export const adminApi = {
