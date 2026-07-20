@@ -27,7 +27,7 @@ export function AdminExamsPage() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-exams"],
-    queryFn: () => examsApi.list(),
+    queryFn: () => examsApi.list("parent_id=null"),
   });
 
   const [open, setOpen] = useState(false);
