@@ -31,12 +31,105 @@ export function ExamDetailPage() {
   const reset = useExamPlayerStore((s) => s.reset);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewFilter, setViewFilter] = useState<"all" | "mock" | "pyq">("all");
+  const [subjectFilter, setSubjectFilter] = useState("All");
+  const [expandedGroups, setExpandedGroups] = useState(false);
+  const [expandedDescription, setExpandedDescription] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { data: exam, isLoading } = useQuery({
     queryKey: ["exam", id],
     queryFn: () => examsApi.get(id),
     enabled: Number.isFinite(id),
   });
+
+  const childTests = exam?.children || [];
+
+  const extractSubject = (title: string): string => {
+    const knownSubjects = [
+      "Quantitative",
+      "Reasoning",
+      "English",
+      "General Awareness",
+      "History",
+      "Geography",
+      "Polity",
+      "Science",
+      "Mathematics",
+      "Physics",
+      "Chemistry",
+      "Biology",
+      "Economy",
+      "Current Affairs",
+      "Hindi",
+    ];
+    const normalized = title.toLowerCase();
+    for (const subject of knownSubjects) {
+      if (normalized.includes(subject.toLowerCase())) {
+        return subject;
+      }
+    }
+    const match = title.match(/^(.*?)\s+(Full Mock|Mini Mock|Subject|Chapter|PYQ|Advanced)/i);
+    return match?.[1] ? match[1].trim() : "Other";
+  };
+
+  const getCategory = (title: string): string => {
+    if (/chapter/i.test(title)) return "Chapter Test";
+    if (/advanced/i.test(title)) return "Advanced Subject Test";
+    if (/subject/i.test(title) || /general intelligence|quantitative aptitude|english|reasoning/i.test(title)) {
+      return "Subject Test";
+    }
+    if (/pyq/i.test(title)) return "PYQ";
+    if (/mock/i.test(title)) return "Mock Test";
+    return "Other";
+  };
+
+  const subjectChips = Array.from(
+    new Set(["All", ...childTests.map((child) => extractSubject(child.title))]),
+  );
+
+  const filteredChildren = childTests.filter((child) => {
+    const title = child.title.toLowerCase();
+    if (viewFilter === "mock" && !/mock/i.test(title)) return false;
+    if (viewFilter === "pyq" && !/pyq/i.test(title)) return false;
+    if (searchQuery && !title.includes(searchQuery.toLowerCase())) return false;
+    if (subjectFilter !== "All" && extractSubject(child.title) !== subjectFilter) return false;
+    return true;
+  });
+
+  const categoryOrder = [
+    "All",
+    "Mock Test",
+    "PYQ",
+    "Chapter Test",
+    "Subject Test",
+    "Advanced Subject Test",
+    "Other",
+  ];
+
+  const groupedChildren = categoryOrder
+    .map((category) => ({
+      category,
+      items:
+        category === "All"
+          ? filteredChildren
+          : filteredChildren.filter((child) => getCategory(child.title) === category),
+    }))
+    .filter((group) => group.items.length > 0 || group.category === "All");
+
+  const visibleGroups = expandedGroups ? groupedChildren : groupedChildren.slice(0, 3);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   const start = async () => {
     setStarting(true);
@@ -57,14 +150,52 @@ export function ExamDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div>
-        <Link to="/exams" className="text-sm text-blue-600 hover:underline">
-          ← Back to exams
-        </Link>
-        <h1 className="text-2xl font-bold mt-2">{exam.title}</h1>
-        <div className="flex flex-wrap gap-2 mt-2">
-          <Badge>{exam.exam_mode}</Badge>
-          <Badge variant="secondary">{exam.status}</Badge>
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <input
+            type="text"
+            placeholder="Search tests..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-2/3 px-4 py-2 border rounded-lg"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleShare}>
+              {copied ? "Copied!" : "Share"}
+            </Button>
+            <Button
+              size="sm"
+              variant={viewFilter === "all" ? "secondary" : "outline"}
+              onClick={() => setViewFilter("all")}
+            >
+              All
+            </Button>
+            <Button
+              size="sm"
+              variant={viewFilter === "mock" ? "secondary" : "outline"}
+              onClick={() => setViewFilter("mock")}
+            >
+              Mock
+            </Button>
+            <Button
+              size="sm"
+              variant={viewFilter === "pyq" ? "secondary" : "outline"}
+              onClick={() => setViewFilter("pyq")}
+            >
+              PYQ
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <Link to="/exams" className="text-sm text-blue-600 hover:underline">
+            ← Back to exams
+          </Link>
+          <h1 className="text-2xl font-bold mt-2">{exam.title}</h1>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Badge>{exam.exam_mode}</Badge>
+            <Badge variant="secondary">{exam.status}</Badge>
+          </div>
         </div>
       </div>
 
@@ -111,47 +242,97 @@ export function ExamDetailPage() {
           <CardHeader>
             <CardTitle className="text-base">Instructions</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm whitespace-pre-wrap">{exam.instructions}</CardContent>
+          <CardContent className="text-sm whitespace-pre-wrap">
+            <div className={expandedDescription ? "" : "line-clamp-4"}>{exam.instructions}</div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mt-3"
+              onClick={() => setExpandedDescription((prev) => !prev)}
+            >
+              {expandedDescription ? "Show less" : "Show more"}
+            </Button>
+          </CardContent>
         </Card>
       ) : null}
 
-      {exam.children && exam.children.length > 0 ? (
-        <Card>
+      <div className="overflow-x-auto">
+        <div className="flex gap-2 py-2 min-w-max">
+          {subjectChips.map((subject) => (
+            <button
+              key={subject}
+              type="button"
+              onClick={() => setSubjectFilter(subject)}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                subjectFilter === subject
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-300 bg-white text-slate-700"
+              }`}
+            >
+              {subject}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {visibleGroups.map((group) => (
+        <Card key={group.category}>
           <CardHeader>
-            <CardTitle className="text-base">Available tests</CardTitle>
+            <CardTitle className="text-base">{group.category}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {exam.children.map((child) => (
-              <div key={child.id} className="border rounded-md p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-semibold">{child.title}</div>
-                    <div className="text-sm text-muted-foreground">{child.exam_mode}</div>
+            {group.items.length > 0 ? (
+              group.items.map((child) => (
+                <div
+                  key={child.id}
+                  className={`rounded-md border p-4 ${
+                    child.total_questions === 0
+                      ? "border-slate-300 bg-slate-100 text-slate-500 opacity-80"
+                      : "border-slate-200 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold">{child.title}</div>
+                      <div className="text-sm text-muted-foreground">{child.exam_mode}</div>
+                    </div>
+                    <Button asChild size="sm" variant="outline" disabled={child.total_questions === 0}>
+                      <Link to="/exams/$examId" params={{ examId: String(child.id) }}>
+                        View
+                      </Link>
+                    </Button>
                   </div>
-                  <Button asChild size="sm">
-                    <Link to="/exams/$examId" params={{ examId: String(child.id) }}>
-                      View test
-                    </Link>
-                  </Button>
+                  <div className="grid grid-cols-3 gap-3 text-sm mt-3">
+                    <div>
+                      <div className="text-muted-foreground text-xs">Duration</div>
+                      <div className="font-medium">{formatDuration(child.duration_seconds)}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground text-xs">Questions</div>
+                      <div className="font-medium">{child.total_questions}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground text-xs">Total marks</div>
+                      <div className="font-medium">{child.total_marks}</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 text-sm mt-3">
-                  <div>
-                    <div className="text-muted-foreground text-xs">Duration</div>
-                    <div className="font-medium">{formatDuration(child.duration_seconds)}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground text-xs">Questions</div>
-                    <div className="font-medium">{child.total_questions}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground text-xs">Total marks</div>
-                    <div className="font-medium">{child.total_marks}</div>
-                  </div>
-                </div>
+              ))
+            ) : (
+              <div className="rounded-md border border-slate-300 bg-slate-100 p-4 text-slate-500">
+                No tests available in this category.
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
+      ))}
+
+      {groupedChildren.length > 3 ? (
+        <div className="flex justify-center">
+          <Button size="sm" variant="outline" onClick={() => setExpandedGroups((prev) => !prev)}>
+            {expandedGroups ? "Show less" : "Show more"}
+          </Button>
+        </div>
       ) : null}
 
       <Card>
