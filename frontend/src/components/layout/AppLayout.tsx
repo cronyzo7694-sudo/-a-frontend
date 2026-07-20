@@ -79,14 +79,13 @@ const navigation: NavGroup[] = [
    Inline SVG for logo / decorative icons
    ═══════════════════════════════════════════════════════════ */
 
-function LogoIcon({ className }: { className?: string }) {
+function LogoIcon({ className, size = "8" }: { className?: string; size?: string }) {
   return (
-    <svg className={className} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" className="fill-primary" />
-      <text x="16" y="22" textAnchor="middle" className="fill-primary-foreground text-[18px] font-bold" style={{ fontFamily: "serif" }}>
-        प
-      </text>
-    </svg>
+    <img
+      src="/favicon.svg"
+      alt="परीक्षa"
+      className={cn("rounded bg-white", className || `h-${size} w-${size}`)}
+    />
   );
 }
 
@@ -180,15 +179,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         >
           {/* Logo */}
-          <div className="flex items-center justify-between h-12 px-3 border-b border-white/10">
-          <Link to="/dashboard" className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
-            <img src="/favicon.svg" alt="परीक्षa" className="h-7 w-7 rounded bg-white" />
-            <span className="truncate max-w-[140px]">{name}</span>
-          </Link>
-          <button type="button" className="lg:hidden p-1 text-slate-400 hover:text-white" onClick={() => setOpen(false)} aria-label="Close menu">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+          <div className={cn("flex items-center h-16 px-4 border-b shrink-0", collapsed && "justify-center")}>
+            <Link to="/dashboard" className="flex items-center gap-3 no-underline hover:opacity-80 transition-opacity">
+              <LogoIcon className="w-8 h-8 shrink-0" />
+              {!collapsed && <span className="text-lg font-bold tracking-tight text-foreground">{name}</span>}
+            </Link>
+          </div>
 
           {/* Nav — scrollable */}
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin">
