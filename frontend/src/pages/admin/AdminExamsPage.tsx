@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { Link } from "@tanstack/react-router";
 import { examsApi, type Exam } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -283,7 +282,7 @@ export function AdminExamsPage() {
                   ) : null}
                   <button onClick={e2=>{e2.stopPropagation();openEdit(e);}} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Edit"><span dangerouslySetInnerHTML={{ __html: I.edit.replace("w-5 h-5","w-3.5 h-3.5") }} /></button>
                   <button onClick={e2=>{e2.stopPropagation();duplicate(e);}} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Duplicate"><span dangerouslySetInnerHTML={{ __html: I.copy.replace("w-5 h-5","w-3.5 h-3.5") }} /></button>
-                  <Link to={`/admin/exams/assign/${e.id}`} onClick={e2=>e2.stopPropagation()} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Assign Questions"><span dangerouslySetInnerHTML={{ __html: I.layers.replace("w-5 h-5","w-3.5 h-3.5") }} /></Link>
+                  <button onClick={e2=>{e2.stopPropagation();window.open(`/admin/exams/assign/${e.id}`, "_self");}} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Assign Questions"><span dangerouslySetInnerHTML={{ __html: I.layers.replace("w-5 h-5","w-3.5 h-3.5") }} /></button>
                   <button onClick={e2=>{e2.stopPropagation();if(window.confirm(`Delete "${e.title}"?`))delMut.mutate(e.id);}} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors" title="Delete"><span dangerouslySetInnerHTML={{ __html: I.trash.replace("w-5 h-5","w-3.5 h-3.5") }} /></button>
                 </div>
               </div>
