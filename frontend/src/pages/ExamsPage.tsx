@@ -9,7 +9,7 @@ import { formatDuration } from "@/lib/utils";
 export function ExamsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["exams"],
-    queryFn: () => examsApi.list(),
+    queryFn: () => examsApi.list("parent_id=null"),
   });
 
   if (isLoading) return <div>Loading exams…</div>;
