@@ -309,6 +309,8 @@ export type Exam = {
   show_result_immediately: boolean;
   total_questions: number;
   total_marks: number;
+  parent_exam_id?: number | null;
+  children?: Exam[];
   sections: ExamSection[];
   created_at?: string;
   /** Additive from Rule Engine — optional */
