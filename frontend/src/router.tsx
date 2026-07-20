@@ -22,6 +22,7 @@ import { QuestionsPage } from "@/pages/admin/QuestionsPage";
 import { AdminExamsPage } from "@/pages/admin/AdminExamsPage";
 import { ImportPage } from "@/pages/admin/ImportPage";
 import { UsersPage } from "@/pages/admin/UsersPage";
+import { FileBankPage } from "@/pages/admin/FileBankPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
@@ -35,7 +36,6 @@ function requireAuth() {
 function requireAdmin() {
   requireAuth();
   const user = useAuthStore.getState().user;
-  // If user not bootstrapped yet, allow — page will load after bootstrap
   if (user && user.role !== "admin") {
     throw redirect({ to: "/dashboard" });
   }
@@ -71,7 +71,6 @@ const indexRoute = createRoute({
   path: "/",
   beforeLoad: () => {
     const token = localStorage.getItem("access_token");
-    // Guests land on exams; signed-in users on dashboard
     if (!token) {
       throw redirect({ to: "/login" });
     }
@@ -84,7 +83,6 @@ const indexRoute = createRoute({
   component: () => null,
 });
 
-/** Authenticated shell with sidebar */
 const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "app",
@@ -144,7 +142,6 @@ const resultsRoute = createRoute({
   component: ResultPage,
 });
 
-/** Full-screen exam player — no sidebar */
 const playRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/play/$attemptId",
@@ -183,6 +180,12 @@ const adminImportRoute = createRoute({
   beforeLoad: () => requireAdmin(),
   component: ImportPage,
 });
+const fileBankRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/file-bank",
+  beforeLoad: () => requireAdmin(),
+  component: FileBankPage,
+});
 const adminUsersRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/users",
@@ -209,6 +212,7 @@ const routeTree = rootRoute.addChildren([
     adminQuestionsRoute,
     adminExamsRoute,
     adminImportRoute,
+    fileBankRoute,
     adminUsersRoute,
   ]),
 ]);
