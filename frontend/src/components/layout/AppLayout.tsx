@@ -70,6 +70,7 @@ const navigation: NavGroup[] = [
       { to: "/admin/questions", label: "Question Bank", icon: FileQuestion, adminOnly: true, flag: "ENABLE_QUESTION_BANK" },
       { to: "/admin/exams", label: "Exam Builder", icon: GraduationCap, adminOnly: true },
       { to: "/admin/import", label: "Import", icon: Upload, adminOnly: true, flag: "ENABLE_IMPORT" },
+      { to: "/admin/file-bank", label: "File Bank", icon: Layers, adminOnly: true, badge: "AI" },
       { to: "/admin/users", label: "Users", icon: Users, adminOnly: true, flag: "ENABLE_ADMIN_PANEL" },
     ],
   },
