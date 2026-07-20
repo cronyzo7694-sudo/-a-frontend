@@ -115,6 +115,45 @@ export function ExamDetailPage() {
         </Card>
       ) : null}
 
+      {exam.children && exam.children.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Available tests</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {exam.children.map((child) => (
+              <div key={child.id} className="border rounded-md p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-semibold">{child.title}</div>
+                    <div className="text-sm text-muted-foreground">{child.exam_mode}</div>
+                  </div>
+                  <Button asChild size="sm">
+                    <Link to="/exams/$examId" params={{ examId: String(child.id) }}>
+                      View test
+                    </Link>
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-sm mt-3">
+                  <div>
+                    <div className="text-muted-foreground text-xs">Duration</div>
+                    <div className="font-medium">{formatDuration(child.duration_seconds)}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs">Questions</div>
+                    <div className="font-medium">{child.total_questions}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs">Total marks</div>
+                    <div className="font-medium">{child.total_marks}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Sections</CardTitle>
