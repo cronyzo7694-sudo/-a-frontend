@@ -1,92 +1,517 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { examsApi } from "@/lib/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { examsApi, type Exam } from "@/lib/api";
 import { formatDuration } from "@/lib/utils";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useExamPlayerStore } from "@/stores/examPlayerStore";
+
+/* ══════════════════════════════════════════════════════════════
+   Constants
+   ══════════════════════════════════════════════════════════════ */
+
+const CATEGORIES = [
+  { key: "all", label: "All", color: "" },
+  { key: "ssc", label: "SSC", color: "#2563eb" },
+  { key: "banking", label: "Banking", color: "#059669" },
+  { key: "railway", label: "Railway", color: "#ea580c" },
+  { key: "upsc", label: "UPSC", color: "#7c3aed" },
+  { key: "teaching", label: "Teaching", color: "#0d9488" },
+  { key: "police", label: "Police", color: "#dc2626" },
+  { key: "defence", label: "Defence", color: "#4f46e5" },
+] as const;
+
+const SORTS = ["Newest", "Popular", "A-Z", "Updated"] as const;
+
+type SortKey = (typeof SORTS)[number];
+
+const PAGE_SIZE = 12;
+
+/* ══════════════════════════════════════════════════════════════
+   Helpers
+   ══════════════════════════════════════════════════════════════ */
+
+function detectCategory(title: string): string {
+  const t = title.toLowerCase();
+  if (t.includes("ssc")) return "ssc";
+  if (t.includes("ibps") || t.includes("sbi") || t.includes("bank")) return "banking";
+  if (t.includes("rrb") || t.includes("railway") || t.includes("group d")) return "railway";
+  if (t.includes("upsc") || t.includes("cds")) return "upsc";
+  if (t.includes("ctet")) return "teaching";
+  if (t.includes("gd") || t.includes("cpo")) return "police";
+  if (t.includes("defence") || t.includes("nda")) return "defence";
+  return "ssc";
+}
+
+function catColor(key: string): string {
+  return CATEGORIES.find((c) => c.key === key)?.color ?? "#6b7280";
+}
+
+function catEmoji(key: string): string {
+  const map: Record<string, string> = {
+    ssc: "🏛️", banking: "🏦", railway: "🚂", upsc: "🎓",
+    teaching: "📚", police: "🛡️", defence: "⚔️",
+  };
+  return map[key] ?? "📝";
+}
+
+function iconSvg(key: string) {
+  const dim = 28;
+  const base = 'fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"';
+  switch (key) {
+    case "ssc": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>`;
+    case "banking": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`;
+    case "railway": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg>`;
+    case "upsc": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M12 3l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>`;
+    case "teaching": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>`;
+    case "police": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M12 2l8 4v4c0 6-8 12-8 12S4 16 4 10V6l8-4z"/></svg>`;
+    case "defence": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M12 2l8 4v4c0 6-8 12-8 12S4 16 4 10V6l8-4z"/></svg>`;
+    default: return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Loading Skeleton
+   ══════════════════════════════════════════════════════════════ */
+
+function Skeleton() {
+  return (
+    <div className="animate-in fade-in duration-300 space-y-6">
+      {/* Stats skeleton */}
+      <div className="flex flex-wrap gap-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-12 w-28 bg-muted rounded-xl animate-pulse" />
+        ))}
+      </div>
+      {/* Search skeleton */}
+      <div className="h-11 bg-muted rounded-xl animate-pulse" />
+      {/* Chips skeleton */}
+      <div className="flex gap-2">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-7 w-16 bg-muted rounded-full animate-pulse" />
+        ))}
+      </div>
+      {/* Cards skeleton */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-36 bg-muted rounded-2xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Main Component
+   ══════════════════════════════════════════════════════════════ */
 
 export function ExamsPage() {
-  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  const loadFromPayload = useExamPlayerStore((s) => s.loadFromPayload);
+  const reset = useExamPlayerStore((s) => s.reset);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["exams", search],
-    queryFn: () =>
-      examsApi.list(
-        `parent_id=null${search ? `&search=${encodeURIComponent(search)}` : ""}`
-      ),
+  const [search, setSearch] = useState("");
+  const [activeCat, setActiveCat] = useState("all");
+  const [sort, setSort] = useState<SortKey>("Newest");
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const [starting, setStarting] = useState<number | null>(null);
+
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  /* ── Data ─────────────────────────────── */
+  const { data, isLoading } = useQuery({
+    queryKey: ["exams"],
+    queryFn: () => examsApi.list("parent_id=null"),
   });
 
-  if (isLoading) return <div>Loading exams…</div>;
-  if (error) return <div className="text-red-600">Failed to load exams</div>;
+  const items: Exam[] = useMemo(() => (data?.items || []), [data]);
 
-  const items = data?.items || [];
+  /* ── Stats ────────────────────────────── */
+  const stats = useMemo(() => {
+    const cats = new Set<string>();
+    items.forEach((e) => cats.add(detectCategory(e.title)));
+    return {
+      total: items.length,
+      categories: cats.size,
+      published: items.filter((e) => e.status === "published").length,
+    };
+  }, [items]);
 
+  /* ── Filtered & sorted ────────────────── */
+  const processed = useMemo(() => {
+    let arr = [...items];
+
+    // Category filter
+    if (activeCat !== "all") {
+      arr = arr.filter((e) => detectCategory(e.title) === activeCat);
+    }
+
+    // Search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      arr = arr.filter(
+        (e) =>
+          e.title.toLowerCase().includes(q) ||
+          (e.description || "").toLowerCase().includes(q)
+      );
+    }
+
+    // Sort
+    switch (sort) {
+      case "A-Z":
+        arr.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "Popular":
+        arr.sort((a, b) => (b.total_questions || 0) - (a.total_questions || 0));
+        break;
+      case "Updated":
+        arr.sort(
+          (a, b) =>
+            new Date(b.updated_at || 0).getTime() -
+            new Date(a.updated_at || 0).getTime()
+        );
+        break;
+      default: // Newest
+        arr.sort(
+          (a, b) =>
+            new Date(b.created_at || 0).getTime() -
+            new Date(a.created_at || 0).getTime()
+        );
+    }
+
+    return arr;
+  }, [items, activeCat, search, sort]);
+
+  const displayed = processed.slice(0, visible);
+  const hasMore = processed.length > visible;
+
+  // Reset pagination on filter change
+  useEffect(() => { setVisible(PAGE_SIZE); }, [activeCat, search, sort]);
+
+  /* ── Keyboard: Ctrl+K ─────────────────── */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
+  /* ── Start exam ───────────────────────── */
+  const startExam = useCallback(
+    async (examId: number, e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setStarting(examId);
+      try {
+        reset();
+        const { attemptsApi } = await import("@/lib/api");
+        const payload = await attemptsApi.start(examId);
+        loadFromPayload(payload);
+        navigate({
+          to: "/play/$attemptId",
+          params: { attemptId: String(payload.attempt.id) },
+        });
+      } catch {
+        setStarting(null);
+      }
+    },
+    [navigate, loadFromPayload, reset]
+  );
+
+  /* ── Loading ──────────────────────────── */
+  if (isLoading) return <Skeleton />;
+
+  /* ══════════════════════════════════════════════════════════ */
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Exams</h1>
-        <p className="text-sm text-muted-foreground">Choose a test and start when ready</p>
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-6 animate-in fade-in duration-300">
+
+      {/* ── Header ─────────────────────────── */}
+      <header className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          Exams
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Find your exam and start practising in seconds
+        </p>
+      </header>
+
+      {/* ── Stats row ──────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <StatPill label="Exams" value={stats.total} emoji="📚" />
+        <StatPill label="Categories" value={stats.categories} emoji="📂" />
+        <StatPill label="Published" value={stats.published} emoji="✅" />
+        <StatPill label="Updated today" value="—" emoji="🔄" muted />
       </div>
 
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search exams... (e.g. SSC, IBPS, Railway)"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md px-4 py-2 border rounded-lg"
-        />
-      </div>
-      {items.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            No published exams available.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((exam) => (
-            <Card key={exam.id} className="flex flex-col">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg leading-snug">{exam.title}</CardTitle>
-                  <Badge variant="secondary">{exam.exam_mode}</Badge>
-                </div>
-                <CardDescription className="line-clamp-2">
-                  {exam.description || "No description"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="mt-auto space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <div className="text-muted-foreground text-xs">Duration</div>
-                    <div className="font-medium">{formatDuration(exam.duration_seconds)}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground text-xs">Questions</div>
-                    <div className="font-medium">{exam.total_questions}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground text-xs">Total marks</div>
-                    <div className="font-medium">{exam.total_marks}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground text-xs">Sections</div>
-                    <div className="font-medium">{exam.sections?.length || 0}</div>
-                  </div>
-                </div>
-                <Button asChild className="w-full">
-                  <Link to="/exams/$examId" params={{ examId: String(exam.id) }}>
-                    View & Start
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+      {/* ── Search (sticky) ────────────────── */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 space-y-3">
+        <div className="relative">
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            ref={searchRef}
+            type="text"
+            placeholder="Search exams, SSC, UPSC, Railway…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border bg-muted/40 pl-10 pr-20 py-2.5 text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/30 transition-all"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {search && (
+              <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+            <kbd className="hidden sm:inline-flex items-center rounded-md border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground tracking-wide">
+              ⌘K
+            </kbd>
+          </div>
         </div>
+
+        {/* ── Category chips ──────────────── */}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-none flex-1">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setActiveCat(c.key)}
+                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 ${
+                  activeCat === c.key
+                    ? "bg-foreground text-background"
+                    : "border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                }`}
+              >
+                {c.key !== "all" && (
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: c.color }}
+                  />
+                )}
+                {c.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Sort ───────────────────────── */}
+          <div className="relative shrink-0">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="appearance-none rounded-lg border bg-card pl-3 pr-7 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/10 cursor-pointer transition-colors"
+            >
+              {SORTS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Results count ──────────────────── */}
+      {search && (
+        <p className="text-xs text-muted-foreground -mt-2">
+          {processed.length} result{processed.length !== 1 ? "s" : ""} for "{search}"
+        </p>
+      )}
+
+      {/* ── Cards grid ─────────────────────── */}
+      {displayed.length === 0 ? (
+        /* Empty state */
+        <div className="text-center py-20 space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-muted/50 flex items-center justify-center">
+            <svg className="w-7 h-7 text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">No exams found</p>
+            <p className="text-xs text-muted-foreground mt-1">Try another search or category</p>
+          </div>
+          {search && (
+            <button onClick={() => setSearch("")} className="text-xs text-primary hover:underline">
+              Clear search
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {displayed.map((exam) => {
+              const cat = detectCategory(exam.title);
+              const color = catColor(cat);
+              const icon = iconSvg(cat);
+              const isStarting = starting === exam.id;
+              const updatedAt = exam.updated_at
+                ? new Date(exam.updated_at)
+                : null;
+              const isNew =
+                updatedAt &&
+                Date.now() - updatedAt.getTime() < 7 * 24 * 3600 * 1000;
+
+              return (
+                <Link
+                  key={exam.id}
+                  to="/exams/$examId"
+                  params={{ examId: String(exam.id) }}
+                  className="group relative flex flex-col rounded-2xl border bg-card p-4 hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                >
+                  {/* Accent top line */}
+                  <div
+                    className="absolute top-0 left-4 right-4 h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    style={{ backgroundColor: color }}
+                  />
+
+                  {/* Header: icon + title */}
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white"
+                      style={{ backgroundColor: color + "18" }}
+                      dangerouslySetInnerHTML={{ __html: icon }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold leading-snug truncate">
+                        {exam.title}
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
+                        {exam.description || "No description"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] text-muted-foreground/80">
+                    {exam.duration_seconds > 0 && (
+                      <span className="inline-flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {formatDuration(exam.duration_seconds)}
+                      </span>
+                    )}
+                    <span>{exam.total_questions || 0} Q</span>
+                    <span>{exam.total_marks || 0} M</span>
+                    <span>{(exam.sections || []).length} sections</span>
+                  </div>
+
+                  {/* Footer: status badge + start button */}
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                      <BadgeDot color={exam.status === "published" ? "#059669" : "#f59e0b"}>
+                        {exam.status}
+                      </BadgeDot>
+                      {isNew && (
+                        <span className="text-[10px] font-medium text-blue-500 bg-blue-50 dark:bg-blue-950/30 px-1.5 py-0.5 rounded-full">
+                          New
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => startExam(exam.id, e)}
+                      disabled={isStarting}
+                      className="inline-flex items-center gap-1 rounded-lg bg-foreground px-3 py-1.5 text-[11px] font-semibold text-background opacity-0 group-hover:opacity-100 transition-all duration-200 hover:opacity-90 disabled:opacity-50"
+                    >
+                      {isStarting ? "Starting…" : "Start"}
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </button>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Show More */}
+          {hasMore && (
+            <div className="text-center pt-2">
+              <button
+                onClick={() => setVisible((p) => p + PAGE_SIZE)}
+                className="inline-flex items-center gap-1.5 rounded-xl border px-5 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+              >
+                Show More
+                <span className="text-[10px] opacity-50">
+                  ({processed.length - displayed.length} remaining)
+                </span>
+              </button>
+            </div>
+          )}
+
+          {!hasMore && processed.length > PAGE_SIZE && (
+            <div className="text-center pt-2">
+              <button
+                onClick={() => setVisible(PAGE_SIZE)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Show Less ↑
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Micro components
+   ══════════════════════════════════════════════════════════════ */
+
+function StatPill({
+  label,
+  value,
+  emoji,
+  muted,
+}: {
+  label: string;
+  value: number | string;
+  emoji: string;
+  muted?: boolean;
+}) {
+  return (
+    <div
+      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+        muted
+          ? "border-dashed text-muted-foreground/50"
+          : "bg-card text-foreground"
+      }`}
+    >
+      <span className="text-sm">{emoji}</span>
+      <div className="flex items-baseline gap-1">
+        <span className={`font-semibold ${muted ? "" : ""}`}>{value}</span>
+        <span className="text-[10px] text-muted-foreground font-normal">
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function BadgeDot({
+  color,
+  children,
+}: {
+  color: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground capitalize">
+      <span
+        className="w-1.5 h-1.5 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      {children}
+    </span>
   );
 }
