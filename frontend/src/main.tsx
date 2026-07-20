@@ -52,12 +52,22 @@ function Bootstrap({ children }: { children: React.ReactNode }) {
 
   if (!initialized || !platformLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100 text-slate-600 text-sm">
-        <div className="text-center space-y-2">
-          <div className="mx-auto h-9 w-9 rounded-md bg-slate-800 text-white flex items-center justify-center text-xs font-semibold tracking-wide">
-            EO
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-6 animate-in">
+          <img
+            src="/favicon.svg"
+            alt="परीक्षa"
+            className="h-16 w-16 rounded-xl bg-white shadow-lg"
+          />
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-lg font-bold tracking-tight text-foreground">
+              परीक्षa
+            </span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
+              Loading workspace…
+            </div>
           </div>
-          <div>Loading workspace…</div>
         </div>
       </div>
     );
@@ -67,12 +77,12 @@ function Bootstrap({ children }: { children: React.ReactNode }) {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <MathJaxContext version={3} config={mathJaxConfig}>
+    <MathJaxContext config={mathJaxConfig} version={3}>
+      <QueryClientProvider client={queryClient}>
         <Bootstrap>
           <RouterProvider router={router} />
         </Bootstrap>
-      </MathJaxContext>
-    </QueryClientProvider>
-  </React.StrictMode>,
+      </QueryClientProvider>
+    </MathJaxContext>
+  </React.StrictMode>
 );
