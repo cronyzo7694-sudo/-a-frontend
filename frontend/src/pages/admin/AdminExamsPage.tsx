@@ -136,7 +136,7 @@ export function AdminExamsPage() {
         title: form.title, description: form.description, instructions: form.instructions,
         exam_mode: form.exam_mode, duration_seconds: Math.max(1, Number(form.duration_minutes) || 30) * 60,
         default_marks: Number(form.default_marks) || 2, default_negative_marks: Number(form.default_negative_marks) || 0.5,
-        strict_sections: form.strict_sections, status: "draft",
+        strict_sections: form.strict_sections, status: "published",
         sections: sections.map((s, i) => ({ title: s, order_index: i })),
       };
       if (editing) return examsApi.update(editing.id, payload);
