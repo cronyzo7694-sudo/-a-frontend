@@ -31,6 +31,25 @@ export function FileBankPage() {
   const stats = statsData?.stats;
   const total = statsData?.total_file_questions || 0;
 
+  const cleanupOldAutoTests = async () => {
+    setBusy("cleanup");
+    setError("");
+    setResult(null);
+    try {
+      const res = await api.post<any>("/exams/file-bank/cleanup-auto", {});
+      setResult({
+        message: res.message,
+        test_type: "cleanup",
+        questions_added: (res.removed || []).length,
+      });
+      qc.invalidateQueries({ queryKey: ["exams"] });
+    } catch (e: any) {
+      setError(e.message || "Cleanup failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const reloadAndAutoGenerate = async () => {
     setBusy("reload");
     setError("");
@@ -88,10 +107,19 @@ export function FileBankPage() {
             `questions_data/` me nayi .txt file daalo, phir niche button dabao — subject/chapter/topic ke saare tests <b>apne aap</b> ban jayenge. Answer file se aate hain (tokens bachte hain).
           </p>
         </div>
-        <Button onClick={reloadAndAutoGenerate} disabled={!!busy} className="rounded-xl gap-2 bg-violet-600 hover:bg-violet-700 text-white">
-          {busy === "reload" ? "Ban raha hai..." : "🔄 Reload Files & Auto-Generate Tests"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={cleanupOldAutoTests} disabled={!!busy} variant="outline" className="rounded-xl gap-2">
+            {busy === "cleanup" ? "Hata raha hai..." : "🧹 Clean Old Auto-Tests"}
+          </Button>
+          <Button onClick={reloadAndAutoGenerate} disabled={!!busy} className="rounded-xl gap-2 bg-violet-600 hover:bg-violet-700 text-white">
+            {busy === "reload" ? "Ban raha hai..." : "🔄 Reload & Auto-Generate Tests"}
+          </Button>
+        </div>
       </header>
+
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800">
+        <b>Tip:</b> Agar pehle tests galat jagah (seedha exams list me) ban gaye the, to pehle <b>"Clean Old Auto-Tests"</b> dabao, phir <b>"Reload & Auto-Generate"</b>. Ab saare tests subject ke <b>"Practice Bank" exam ke andar</b> banenge.
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
