@@ -83,6 +83,7 @@ export function ExamDetailPage() {
   const [starting, setStarting] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [descOpen, setDescOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("all");
   const [activeSubject, setActiveSubject] = useState<string | null>(null);
   const [visible, setVisible] = useState(PAGE_SIZE);
@@ -237,9 +238,19 @@ export function ExamDetailPage() {
           </button>
         </div>
         {exam.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl whitespace-pre-wrap">
-            {exam.description}
-          </p>
+          <div className="max-w-3xl">
+            <p className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap ${descOpen ? "" : "line-clamp-3"}`}>
+              {exam.description}
+            </p>
+            {exam.description.length > 160 && (
+              <button
+                onClick={() => setDescOpen(o => !o)}
+                className="mt-1 text-xs font-medium text-primary hover:underline"
+              >
+                {descOpen ? "Show less ▲" : "Show more ▼"}
+              </button>
+            )}
+          </div>
         )}
       </header>
 
