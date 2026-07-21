@@ -53,3 +53,4 @@ temp/
 
 # generated tree snapshot (optional)
 # PROJECT_TREE.txt
+frontend/tsconfig.tsbuildinfo
