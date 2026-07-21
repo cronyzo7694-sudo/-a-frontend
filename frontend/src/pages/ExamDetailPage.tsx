@@ -13,28 +13,31 @@ import { useExamPlayerStore } from "@/stores/examPlayerStore";
 
 const PAGE_SIZE = 10;
 
-function cat(title: string): "full-mock" | "mini-mock" | "chapter" | "subject" {
-  if (/^Full Mock\s+\d+$/i.test(title)) return "full-mock";
-  if (/^Mini Mock\s+\d+$/i.test(title)) return "mini-mock";
-  if (title.includes(" — ")) return "chapter";
-  return "subject";
+function cat(title: string): "full-mock" | "subject" | "chapter" | "topic" {
+  const t = (title || "").toLowerCase();
+  if (t.includes("full")) return "full-mock";
+  if (t.includes("subject test")) return "subject";
+  if (t.includes("chapter test")) return "chapter";
+  if (t.includes("topic test")) return "topic";
+  return "topic";
 }
 
 function extractSubject(title: string): string {
-  const i = title.indexOf(" — ");
+  // "Number Analogy - Topic Test" -> "Number Analogy"
+  const i = title.indexOf(" - ");
   return i > -1 ? title.substring(0, i) : title;
 }
 
 function catIcon(c: string) {
-  return c === "full-mock" ? "📝" : c === "mini-mock" ? "⚡" : c === "chapter" ? "📖" : "📘";
+  return c === "full-mock" ? "📝" : c === "subject" ? "🧠" : c === "chapter" ? "📖" : "📘";
 }
 
 const TABS = [
   { key: "all", label: "All" },
+  { key: "topic", label: "Topic Test" },
   { key: "chapter", label: "Chapter Test" },
   { key: "subject", label: "Subject Test" },
-  { key: "full-mock", label: "Full Mock" },
-  { key: "mini-mock", label: "Mini Mock" },
+  { key: "full-mock", label: "Full Test" },
 ] as const;
 
 /* ───────────────────────────────────────────

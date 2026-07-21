@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MathText } from "@/components/MathText";
+import { Loader } from "@/components/Loader";
 import { formatDuration, cn } from "@/lib/utils";
 
 export function ResultPage() {
@@ -22,7 +23,18 @@ export function ResultPage() {
   });
 
   if (isLoading) {
-    return <div className="text-sm text-slate-500">Loading result…</div>;
+    return (
+      <Loader
+        title="Result taiyaar ho raha hai"
+        messages={[
+          "Aapke jawab check kiye ja rahe hain…",
+          "Sahi aur galat count kiya ja raha hai…",
+          "Score aur percentage nikaala ja raha hai…",
+          "Analysis banaya ja raha hai…",
+          "Bas thoda aur…",
+        ]}
+      />
+    );
   }
   if (error || !data) {
     return <div className="text-sm text-red-600">Failed to load result</div>;

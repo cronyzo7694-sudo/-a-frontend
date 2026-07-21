@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { attemptsApi, type PlayerPayload } from "@/lib/api";
 import { useExamPlayerStore } from "@/stores/examPlayerStore";
+import { Loader } from "@/components/Loader";
 import { QuestionRenderer } from "@/components/exam/QuestionRenderer";
 import { QuestionPalette } from "@/components/exam/QuestionPalette";
 import { ExamTimer } from "@/components/exam/ExamTimer";
@@ -130,8 +131,16 @@ export function ExamPlayerPage() {
 
   if (booting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100 text-sm text-slate-600">
-        Preparing exam session…
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <Loader
+          title="Exam khul raha hai"
+          messages={[
+            "Questions load kiye ja rahe hain…",
+            "Aapka paper taiyaar kiya ja raha hai…",
+            "Timer set kiya ja raha hai…",
+            "Bas thoda aur…",
+          ]}
+        />
       </div>
     );
   }
