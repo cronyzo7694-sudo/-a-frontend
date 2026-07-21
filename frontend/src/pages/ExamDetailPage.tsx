@@ -237,7 +237,7 @@ export function ExamDetailPage() {
           </button>
         </div>
         {exam.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl whitespace-pre-wrap">
             {exam.description}
           </p>
         )}

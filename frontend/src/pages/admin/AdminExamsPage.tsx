@@ -327,37 +327,29 @@ export function AdminExamsPage() {
             <Input value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="e.g. SSC CGL Tier 1 — Full Mock 1" className="rounded-xl h-9 text-sm" autoFocus />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Description</Label>
-            <Input value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Brief exam description" className="rounded-xl h-9 text-sm" />
+            <Label className="text-xs font-semibold">Description / Syllabus</Label>
+            <textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} rows={10}
+              placeholder={"Yahan exam ka pura syllabus paste karo (jaisa hai waisa - line break, gaps, list sab chalega).\n\nExample:\nSSC CHSL\nReasoning: Analogy, Coding-Decoding, Series, Blood Relation\nMaths: Percentage, Profit & Loss, Time & Work\nEnglish: Synonym, Antonym, Idiom\nGA: History, Geography, Polity\n\nSystem in subjects/chapters ko khud padh ke, jinke questions file me hain, unke tests bana dega."}
+              className="w-full rounded-xl border bg-card px-3 py-2 text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/10 whitespace-pre-wrap" />
+            <p className="text-[10px] text-muted-foreground">Jaisa paste karoge waisa hi dikhega (formatting preserve hoti hai). System syllabus se subjects/chapters khud detect karega.</p>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold">Instructions</Label>
             <textarea value={form.instructions} onChange={e=>setForm(p=>({...p,instructions:e.target.value}))} rows={3}
               className="w-full rounded-xl border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 resize-y" placeholder="Exam instructions for students…" />
           </div>
+          <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] text-blue-800">
+            <b>Note:</b> Mode aur Duration har test ke liye <b>khud set</b> ho jate hain — Topic test chhota (kam time), Full test bada (real paper jitna time). Agar file me PYQ hain to test apne aap <b>PYQ</b> mode me banega, warna Mock. Niche wale sirf default hain.
+          </div>
           <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5"><Label className="text-xs font-semibold">Mode</Label><select value={form.exam_mode} onChange={e=>setForm(p=>({...p,exam_mode:e.target.value}))} className="w-full rounded-xl border bg-card h-9 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/10 cursor-pointer"><option value="mock">Mock</option><option value="practice">Practice</option><option value="sectional">Sectional</option><option value="pyq">PYQ</option><option value="live">Live</option></select></div>
-            <div className="space-y-1.5"><Label className="text-xs font-semibold">Duration (min)</Label><Input value={form.duration_minutes} onChange={e=>setForm(p=>({...p,duration_minutes:e.target.value}))} type="number" min="1" className="rounded-xl h-9 text-sm text-center" /></div>
+            <div className="space-y-1.5"><Label className="text-xs font-semibold">Default Mode</Label><select value={form.exam_mode} onChange={e=>setForm(p=>({...p,exam_mode:e.target.value}))} className="w-full rounded-xl border bg-card h-9 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/10 cursor-pointer"><option value="mock">Mock (auto)</option><option value="practice">Practice</option><option value="sectional">Sectional</option><option value="pyq">PYQ</option><option value="live">Live</option></select></div>
             <div className="space-y-1.5"><Label className="text-xs font-semibold">Marks / Q</Label><Input value={form.default_marks} onChange={e=>setForm(p=>({...p,default_marks:e.target.value}))} type="number" step="0.5" min="0" className="rounded-xl h-9 text-sm text-center" /></div>
+            <div className="space-y-1.5"><Label className="text-xs font-semibold">Negative</Label><Input value={form.default_negative_marks} onChange={e=>setForm(p=>({...p,default_negative_marks:e.target.value}))} type="number" step="0.25" min="0" className="rounded-xl h-9 text-sm text-center" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label className="text-xs font-semibold">Negative Marks</Label><Input value={form.default_negative_marks} onChange={e=>setForm(p=>({...p,default_negative_marks:e.target.value}))} type="number" step="0.25" min="0" className="rounded-xl h-9 text-sm text-center" /></div>
-            <div className="flex items-end"><label className="flex items-center gap-2 cursor-pointer pb-2"><button type="button" role="switch" aria-checked={form.strict_sections} onClick={()=>setForm(p=>({...p,strict_sections:!p.strict_sections}))} className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ${form.strict_sections?"bg-primary":"bg-muted-foreground/20"}`}><span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition duration-200 ${form.strict_sections?"translate-x-[18px]":"translate-x-[3px]"}`}/></button><Label className="text-xs">Strict Sections</Label></label></div>
-          </div>
-
-          {/* Sections builder */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between"><Label className="text-xs font-semibold">Sections</Label><span className="text-[10px] text-muted-foreground">{sections.length} sections</span></div>
-            <div className="space-y-1.5">
-              {sections.map((s, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="shrink-0 w-6 h-6 rounded-lg bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">{i+1}</span>
-                  <Input value={s} onChange={e=>{const ns=[...sections];ns[i]=e.target.value;setSections(ns);}} className="rounded-xl h-8 text-sm flex-1" placeholder={`Section ${i+1}`}/>
-                  {sections.length > 1 && <button onClick={()=>setSections(sections.filter((_,j)=>j!==i))} className="p-1 rounded-lg text-muted-foreground hover:text-red-500 transition-colors"><span dangerouslySetInnerHTML={{__html:I.trash.replace("w-5 h-5","w-3.5 h-3.5")}}/></button>}
-                </div>
-              ))}
-            </div>
-            <Button variant="outline" size="sm" onClick={()=>setSections([...sections,`Section ${sections.length+1}`])} className="rounded-lg h-7 text-[11px] gap-1 w-full"><span dangerouslySetInnerHTML={{__html:I.plus.replace("w-5 h-5","w-3 h-3")}}/>Add Section</Button>
+          <div className="rounded-lg border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
+            Tests file bank se apne aap banenge (topic / chapter / subject / full).
+            Manual sections ki zarurat nahi. Exam save karte hi, jinke questions file me
+            hain unke tests andar aa jayenge, baaki "Coming Soon" dikhenge.
           </div>
 
           {error && <p className="text-[11px] text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
