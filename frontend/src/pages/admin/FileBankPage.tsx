@@ -43,11 +43,26 @@ export function FileBankPage() {
     } finally { setBusy(null); }
   };
 
+  const rebuildAll = async () => {
+    if (!confirm("Sabhi exams ke tests dobara banenge (file bank se). Aapke EXAM CARDS safe rahenge — sirf unke andar ke tests refresh honge. Continue?")) return;
+    setBusy("rebuild"); setError(""); setMsg("");
+    try {
+      const res = await api.post<any>("/exams/admin/rebuild-all-tests", {});
+      setMsg(`${res.message} (${res.exams_rebuilt} exams, ${res.tests_created} tests)`);
+      qc.invalidateQueries({ queryKey: ["exams"] });
+    } catch (e: any) {
+      setError(e.message || "Rebuild failed");
+    } finally { setBusy(null); }
+  };
+
   const factoryReset = async () => {
-    if (!confirm("Saare exams, tests aur attempts DELETE ho jayenge (fresh start). File bank aur users safe rahenge. Continue?")) return;
+    // Triple safety: two confirms + typed phrase.
+    if (!confirm("⚠️ KHATRA: Ye SAB KUCH hata dega — saare exams, tests, questions, subjects. Ye wapas nahi aayega!")) return;
+    const typed = window.prompt('Pakka karne ke liye ye type karo: DELETE EVERYTHING');
+    if (typed !== "DELETE EVERYTHING") { setError("Factory reset cancel — confirmation match nahi hua."); return; }
     setBusy("reset"); setError(""); setMsg("");
     try {
-      const res = await api.post<any>("/exams/admin/factory-reset", {});
+      const res = await api.post<any>("/exams/admin/factory-reset", { confirm: "DELETE EVERYTHING" });
       setMsg(res.message || "Factory reset done.");
       qc.invalidateQueries({ queryKey: ["exams"] });
     } catch (e: any) {
@@ -73,11 +88,20 @@ export function FileBankPage() {
           <Button onClick={reloadFiles} disabled={!!busy} className="rounded-xl gap-2 bg-violet-600 hover:bg-violet-700 text-white">
             {busy === "reload" ? "Reloading..." : "🔄 Reload Files"}
           </Button>
+          <Button onClick={rebuildAll} disabled={!!busy} variant="outline" className="rounded-xl gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+            {busy === "rebuild" ? "Rebuilding..." : "♻️ Rebuild All Tests"}
+          </Button>
           <Button onClick={factoryReset} disabled={!!busy} variant="outline" className="rounded-xl gap-2 border-red-300 text-red-600 hover:bg-red-50">
             {busy === "reset" ? "Resetting..." : "🧹 Factory Reset"}
           </Button>
         </div>
       </header>
+
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
+        <b>♻️ Rebuild All Tests</b> = safe safai. Sabhi exams ke tests dobara file bank se ban jaate hain,
+        par aapke <b>exam cards (SSC CHSL etc.) SAFE rehte hain</b>. Rozana isi ka use karo.
+        <br/><b>🧹 Factory Reset</b> = sab kuch mita deta hai (exams bhi) — sirf ekdum shuru se start karne ke liye. Double confirm + phrase maangta hai.
+      </div>
 
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-800">
         <b>Rules:</b> No exam → no test. Exam banaya par uske questions file me nahi → exam par

@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/utils";
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useExamPlayerStore } from "@/stores/examPlayerStore";
+import { useAuthStore } from "@/stores/authStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 /* ───────────────────────────────────────────
    Constants & helpers
@@ -87,6 +89,23 @@ export function ExamDetailPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [descOpen, setDescOpen] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
+  const isAdmin = useAuthStore((s) => s.user?.role === "admin");
+  const qc = useQueryClient();
+
+  const rebuildThisExam = useCallback(async () => {
+    if (!confirm("Is exam ke tests dobara file bank se banenge. Exam card safe rahega. Continue?")) return;
+    setRebuilding(true);
+    try {
+      await examsApi.rebuildExamTests(id);
+      await qc.invalidateQueries({ queryKey: ["exam", id] });
+      window.location.reload();
+    } catch (e) {
+      alert("Rebuild failed. Thodi der baad try karo.");
+    } finally {
+      setRebuilding(false);
+    }
+  }, [id, qc]);
   const [activeTab, setActiveTab] = useState<string>("all");
   const [activeSubject, setActiveSubject] = useState<string | null>(null);
   const [visible, setVisible] = useState(PAGE_SIZE);
@@ -239,6 +258,16 @@ export function ExamDetailPage() {
               </>
             )}
           </button>
+          {isAdmin && (
+            <button
+              onClick={rebuildThisExam}
+              disabled={rebuilding}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+              title="Is exam ke tests dobara banao (exam card safe)"
+            >
+              ♻️ {rebuilding ? "Rebuilding…" : "Rebuild Tests"}
+            </button>
+          )}
         </div>
         {exam.description && (
           <div className="max-w-3xl">
