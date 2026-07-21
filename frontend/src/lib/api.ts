@@ -339,6 +339,10 @@ export const examsApi = {
     api.delete(`/exams/${examId}/questions/${examQuestionId}`),
   publish: (examId: number) => api.post<{ item: Exam }>(`/exams/${examId}/publish`),
   unpublish: (examId: number) => api.post<{ item: Exam }>(`/exams/${examId}/unpublish`),
+  // File bank + auto test generation
+  fileBankStats: () => api.get<any>("/exams/file-bank/stats"),
+  reloadFileBank: () => api.post<any>("/exams/file-bank/reload", {}),
+  makeTestsByAi: (examId: number) => api.post<any>(`/exams/${examId}/make-tests-by-ai`, {}),
 };
 
 // ---------- Attempts ----------

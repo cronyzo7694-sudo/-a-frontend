@@ -31,6 +31,28 @@ export function FileBankPage() {
   const stats = statsData?.stats;
   const total = statsData?.total_file_questions || 0;
 
+  const reloadAndAutoGenerate = async () => {
+    setBusy("reload");
+    setError("");
+    setResult(null);
+    try {
+      const res = await api.post<any>("/exams/file-bank/reload", {});
+      setResult({
+        message: `File bank reloaded: ${res.total} questions. Auto-tests created: ${res.auto_tests?.created ?? 0}, skipped: ${res.auto_tests?.skipped ?? 0}.`,
+        test_type: "auto_generate",
+        exam_id: res.auto_tests?.tests?.[0]?.exam_id,
+        questions_added: res.total,
+        auto: res.auto_tests,
+      });
+      qc.invalidateQueries({ queryKey: ["file-bank-stats"] });
+      qc.invalidateQueries({ queryKey: ["exams"] });
+    } catch (e: any) {
+      setError(e.message || "Reload failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const createTest = async (test_type: string, filters: any = {}) => {
     setBusy(test_type + JSON.stringify(filters));
     setError("");
@@ -57,13 +79,18 @@ export function FileBankPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-6">
-      <header>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
-          File Bank - Real Test Creator 🧠
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Code ke sath jo txt file dali hai `questions_data/`, usse AI chapter wise / topic wise / full mock test banayega. Real SSC jaisa.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
+            File Bank - Auto Test Creator 🧠
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            `questions_data/` me nayi .txt file daalo, phir niche button dabao — subject/chapter/topic ke saare tests <b>apne aap</b> ban jayenge. Answer file se aate hain (tokens bachte hain).
+          </p>
+        </div>
+        <Button onClick={reloadAndAutoGenerate} disabled={!!busy} className="rounded-xl gap-2 bg-violet-600 hover:bg-violet-700 text-white">
+          {busy === "reload" ? "Ban raha hai..." : "🔄 Reload Files & Auto-Generate Tests"}
+        </Button>
       </header>
 
       {/* Stats */}
