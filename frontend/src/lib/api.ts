@@ -342,8 +342,8 @@ export const examsApi = {
   // File bank + auto test generation
   fileBankStats: () => api.get<any>("/exams/file-bank/stats"),
   reloadFileBank: () => api.post<any>("/exams/file-bank/reload", {}),
-  cleanupAutoTests: () => api.post<any>("/exams/file-bank/cleanup-auto", {}),
-  makeTestsByAi: (examId: number) => api.post<any>(`/exams/${examId}/make-tests-by-ai`, {}),
+  factoryReset: () => api.post<any>("/exams/admin/factory-reset", {}),
+  generateTests: (examId: number) => api.post<any>(`/exams/${examId}/generate-tests`, {}),
 };
 
 // ---------- Attempts ----------
