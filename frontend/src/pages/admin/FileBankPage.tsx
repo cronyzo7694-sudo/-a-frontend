@@ -151,7 +151,22 @@ export function FileBankPage() {
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 space-y-3">
           <h3 className="font-bold text-emerald-700">✅ Test Ban Gaya! - {result.test_type}</h3>
           <p className="text-sm text-emerald-600">{result.message}</p>
-          <div className="text-xs">Exam ID: {result.exam_id} - {result.questions_added} questions added</div>
+          <div className="text-xs">Exam ID: {result.exam_id} · {result.questions_added} questions stored (pool)</div>
+          <div className="flex flex-wrap gap-2 text-[11px]">
+            {typeof result.answers_from_file === "number" && (
+              <Badge variant="secondary" className="text-[10px]">📄 File answers: {result.answers_from_file}</Badge>
+            )}
+            {typeof result.answers_from_ai === "number" && result.answers_from_ai > 0 && (
+              <Badge variant="secondary" className="text-[10px]">🧠 AI answers: {result.answers_from_ai}</Badge>
+            )}
+            {typeof result.skipped_no_answer === "number" && result.skipped_no_answer > 0 && (
+              <Badge variant="secondary" className="text-[10px] bg-amber-100">⚠️ Skipped (no answer): {result.skipped_no_answer}</Badge>
+            )}
+            <Badge variant="secondary" className="text-[10px] bg-emerald-100">🔁 No-repeat ON</Badge>
+          </div>
+          <p className="text-[11px] text-emerald-700/80">
+            Ek baar bana — sabhi users ko yahi milega. Har attempt me real-paper jitne hi questions aate hain, aur pehle sahi kiye questions dobara nahi aate.
+          </p>
           <div className="flex gap-2">
             <a href={`/exams/${result.exam_id}`}><Button size="sm" className="rounded-xl">View Test</Button></a>
             <a href="/exams"><Button size="sm" variant="outline" className="rounded-xl">Go to Exams</Button></a>
