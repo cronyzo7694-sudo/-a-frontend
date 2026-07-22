@@ -223,7 +223,7 @@ function SettingsShell({ title, subtitle, nav, active, onChange, children }: {
       </div>
 
       {/* Layout: nav + content */}
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* Desktop sidebar */}
         <nav className="hidden lg:block w-52 shrink-0 space-y-1 sticky top-20 self-start">
           {filteredNav.map(n => (
