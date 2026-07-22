@@ -374,9 +374,8 @@ export function DashboardPage() {
           <QuickAction icon={ii("book")} label="Subject Tests" to="/exams" />
           <QuickAction icon={ii("lightning")} label="Daily Challenge" to="/exams" />
           <QuickAction icon={ii("star")} label="PYQ Papers" to="/exams" />
-          <QuickAction icon={ii("medal")} label="Leaderboard" to="/leaderboard" />
           <QuickAction icon={ii("activity")} label="Analytics" to="/analytics" />
-          <QuickAction icon={ii("target")} label="Bookmarks" to="/bookmarks" />
+          <QuickAction icon={ii("target")} label="My Attempts" to="/attempts" />
           <QuickAction icon={ii("flame")} label="Revision" to="/exams" />
         </div>
       </div>
