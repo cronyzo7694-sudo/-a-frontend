@@ -10,6 +10,7 @@ import { formatDuration, formatDate } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { Loader } from "@/components/Loader";
 import { useSlowFlag } from "@/lib/useSlowFlag";
+import { DonateButton } from "@/components/DonateButton";
 
 /* ══════════════════════════════════════════════════════════════
    Icons — inline SVG for zero dependency
@@ -223,7 +224,33 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* ─── Continue Learning (if in-progress) ─ */}
+      {/* ─── FREE + Donation banner ────────────── */}
+      <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-50 p-5 sm:p-6">
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-emerald-400/10 rounded-full blur-3xl" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2">
+              <span className="rounded-full bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide">100% Free</span>
+              <span className="text-emerald-700 font-extrabold text-base sm:text-lg">ये सारे टेस्ट बिल्कुल फ्री हैं! 🎉</span>
+            </div>
+            <p className="text-[13px] text-emerald-900/80 leading-relaxed max-w-2xl">
+              <b>All these tests are completely FREE</b> — aaram se apni taiyaari karo. Aage main notes,
+              free books aur bhi बहुत kuch dene ki poori koshish karunga.
+              <br />
+              Abhi website thodi slow hai / apna domain nahi hai kyunki <b>main bhi ek student hu</b> aur paid
+              domain/hosting ke paise nahi hain. Agar kisi ke paas <b>₹40–50</b> bhi extra hain to please donate
+              karein — taaki sabhi log is website ka poora fayda le sakein. Agar in tests se aapko madad mile,
+              to zaroor support karein. 🙏
+              <br />
+              <span className="text-emerald-800/70">Har donation seedha website ko fast + free banaye rakhne me lagega. Aapki safety ke liye payment Razorpay se secure hai.</span>
+            </p>
+          </div>
+          <div className="shrink-0 flex flex-col items-center gap-2">
+            <DonateButton />
+            <span className="text-[10px] text-emerald-700/70">Secured by Razorpay 🔒</span>
+          </div>
+        </div>
+      </div>
       {inProgress && (
         <Card className="border-primary/20 bg-primary/5 overflow-hidden">
           <CardContent className="p-5 flex flex-wrap items-center justify-between gap-4">
