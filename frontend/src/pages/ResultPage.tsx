@@ -21,10 +21,8 @@ export function ResultPage() {
   const [lang, setLang] = useState<"en" | "hi">(() => {
     try { return (localStorage.getItem("exam_lang") as "en" | "hi") || "en"; } catch { return "en"; }
   });
-  // Per-question explanation cache { [questionId]: { en, hi } }
-  const [expl, setExpl] = useState<Record<number, { en?: string; hi?: string }>>({});
-  // Which question's explanation is currently being generated
-  const [explBusy, setExplBusy] = useState<number | null>(null);
+  // Per-question explanation cache { [questionId]: { en, hi } } (file explanations)
+  const [expl] = useState<Record<number, { en?: string; hi?: string }>>({});
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["review", id],
@@ -48,32 +46,20 @@ export function ResultPage() {
     return `${qt || ""}\n${opts}${correct}${ask}`;
   };
 
-  // Open the question in an external AI (zero tokens for us).
-  const askExternal = (provider: "chatgpt" | "gemini" | "perplexity", q: any) => {
-    const text = encodeURIComponent(buildAskText(q));
+  // Ask an external AI: copy the question to clipboard (so the student just
+  // pastes it) and open the AI site. ChatGPT/Gemini no longer reliably auto-fill
+  // from a URL param, so clipboard is the dependable way. Zero tokens for us.
+  const [copiedFor, setCopiedFor] = useState<string | null>(null);
+  const askExternal = async (provider: "chatgpt" | "gemini", q: any) => {
+    const text = buildAskText(q);
+    try { await navigator.clipboard?.writeText(text); } catch { /* ignore */ }
+    setCopiedFor(`${provider}-${q?.id}`);
+    setTimeout(() => setCopiedFor(null), 2500);
     const urls: Record<string, string> = {
-      chatgpt: `https://chat.openai.com/?q=${text}`,
-      gemini: `https://gemini.google.com/app?q=${text}`,
-      perplexity: `https://www.perplexity.ai/search?q=${text}`,
+      chatgpt: "https://chat.openai.com/",
+      gemini: "https://gemini.google.com/app",
     };
-    // copy to clipboard as a fallback (some AI sites ignore the query param)
-    try { navigator.clipboard?.writeText(decodeURIComponent(text)); } catch { /* ignore */ }
     window.open(urls[provider], "_blank", "noopener,noreferrer");
-  };
-
-  // On-demand: fetch/generate explanation for ONE question when user clicks.
-  const loadExplanation = async (qid: number, q: any) => {
-    // already have it (file or cache)?
-    const fileExpl = lang === "hi" ? (q?.explanation_hi || q?.explanation) : q?.explanation;
-    if (fileExpl || (expl[qid] || {})[lang]) return;
-    setExplBusy(qid);
-    try {
-      const res = await attemptsApi.questionExplanation(qid, lang);
-      if (res?.explanation) {
-        setExpl((m) => ({ ...m, [qid]: { ...(m[qid] || {}), [lang]: res.explanation } }));
-      }
-    } catch { /* ignore */ }
-    finally { setExplBusy(null); }
   };
 
   if (isLoading) {
@@ -376,7 +362,6 @@ export function ResultPage() {
                             ? (item.question.explanation_hi || item.question.explanation)
                             : item.question.explanation;
                           const shown = lang === "hi" ? (cached.hi || fileExpl) : (cached.en || fileExpl);
-                          const busy = explBusy === item.question_id;
                           if (shown) {
                             return (
                               <div className="mt-2 rounded border bg-white/80 p-2">
@@ -387,49 +372,22 @@ export function ResultPage() {
                               </div>
                             );
                           }
-                          // While generating: clear animated feedback
-                          if (busy) {
-                            return (
-                              <div className="mt-2 rounded border border-primary/30 bg-primary/5 p-3 flex items-center gap-3">
-                                <span className="relative flex h-5 w-5 shrink-0">
-                                  <span className="absolute inset-0 rounded-full border-2 border-primary/20" />
-                                  <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
-                                </span>
-                                <div className="flex-1">
-                                  <div className="text-xs font-medium text-primary">
-                                    {lang === "hi" ? "AI व्याख्या बना रहा है…" : "AI is writing the explanation…"}
-                                  </div>
-                                  <div className="mt-1 h-1 w-full max-w-[180px] rounded-full bg-muted overflow-hidden">
-                                    <div className="h-full w-1/3 bg-primary rounded-full animate-[cardload_1.1s_ease-in-out_infinite]" />
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }
-                          // No explanation yet -> our AI button + external AI buttons
+                          // No file explanation -> let student ask ChatGPT/Gemini.
+                          // We copy the question to clipboard + open the AI site.
+                          const copiedC = copiedFor === `chatgpt-${item.question.id}`;
+                          const copiedG = copiedFor === `gemini-${item.question.id}`;
                           return (
                             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                              <button
-                                onClick={() => loadExplanation(item.question_id, item.question)}
-                                disabled={explBusy !== null}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
-                              >
-                                {lang === "hi" ? "💡 व्याख्या देखें" : "💡 Explain"}
-                              </button>
-                              <span className="text-[10px] text-muted-foreground">
-                                {lang === "hi" ? "या पूछें:" : "or ask:"}
+                              <span className="text-[11px] text-muted-foreground">
+                                {lang === "hi" ? "AI से समझें:" : "Ask AI:"}
                               </span>
                               <button onClick={() => askExternal("chatgpt", item.question)}
-                                className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Ask ChatGPT">
-                                ChatGPT
+                                className="rounded-lg border px-3 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Copy question + open ChatGPT">
+                                {copiedC ? (lang === "hi" ? "✅ कॉपी हो गया, पेस्ट करें" : "✅ Copied! Paste it") : "🤖 ChatGPT"}
                               </button>
                               <button onClick={() => askExternal("gemini", item.question)}
-                                className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Ask Gemini">
-                                Gemini
-                              </button>
-                              <button onClick={() => askExternal("perplexity", item.question)}
-                                className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Ask Perplexity">
-                                Perplexity
+                                className="rounded-lg border px-3 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Copy question + open Gemini">
+                                {copiedG ? (lang === "hi" ? "✅ कॉपी हो गया, पेस्ट करें" : "✅ Copied! Paste it") : "✨ Gemini"}
                               </button>
                             </div>
                           );

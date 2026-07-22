@@ -289,10 +289,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* ── Header ────────────────────────── */}
           <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-xl border-b flex items-center gap-3 px-4 sm:px-6 shrink-0">
+            {/* Mobile back button — uses in-app history so Telegram/in-app
+                browsers don't close the whole site on back. */}
+            <button
+              onClick={() => {
+                if (window.history.length > 1) window.history.back();
+                else navigate({ to: "/dashboard" });
+              }}
+              className="lg:hidden shrink-0 p-2 -ml-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Back"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden shrink-0 p-2 -ml-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="lg:hidden shrink-0 p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <Menu className="w-5 h-5" />
             </button>
