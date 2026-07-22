@@ -396,19 +396,19 @@ function SecurityPanel() {
     <div className="space-y-5">
       <SectionHead icon={I.lock} title="Security" desc="Password, sessions, and authentication" />
       <div className="space-y-3">
-        <div className="flex items-center justify-between rounded-2xl border p-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2 rounded-2xl border p-4">
+          <div className="flex items-center gap-3 min-w-0">
             <span className="shrink-0 w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary" dangerouslySetInnerHTML={{ __html: I.lock.replace("w-5 h-5","w-4 h-4") }} />
-            <div><p className="text-sm font-semibold">Password</p><p className="text-[11px] text-muted-foreground">Last changed: —</p></div>
+            <div className="min-w-0"><p className="text-sm font-semibold">Password</p><p className="text-[11px] text-muted-foreground truncate">Last changed: —</p></div>
           </div>
-          <Link to="/profile"><Button variant="outline" size="sm" className="rounded-xl h-8 text-[11px]">Change</Button></Link>
+          <Link to="/profile" className="shrink-0"><Button variant="outline" size="sm" className="rounded-xl h-8 text-[11px]">Change</Button></Link>
         </div>
-        <div className="flex items-center justify-between rounded-2xl border p-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2 rounded-2xl border p-4">
+          <div className="flex items-center gap-3 min-w-0">
             <span className="shrink-0 w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-muted-foreground" dangerouslySetInnerHTML={{ __html: I.monitor.replace("w-5 h-5","w-4 h-4") }} />
-            <div><p className="text-sm font-semibold">Active Sessions</p><p className="text-[11px] text-muted-foreground">1 device · {user?.auth_provider || "password"} auth</p></div>
+            <div className="min-w-0"><p className="text-sm font-semibold">Active Sessions</p><p className="text-[11px] text-muted-foreground truncate">1 device · {user?.auth_provider || "password"} auth</p></div>
           </div>
-          <Button variant="outline" size="sm" className="rounded-xl h-8 text-[11px]">Manage</Button>
+          <Button variant="outline" size="sm" className="rounded-xl h-8 text-[11px] shrink-0">Manage</Button>
         </div>
       </div>
     </div>
@@ -519,7 +519,7 @@ function AppearancePanel() {
       <SectionHead icon={I.palette} title="Appearance" desc="Customize how परीक्षa looks" />
       <div className="space-y-3">
         <Label className="text-xs font-semibold">Theme</Label>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <RadioCard icon={I.sun} label="Light" desc="Clean & bright" selected={theme==="light"} onClick={() => setTheme("light")} />
           <RadioCard icon={I.moon} label="Dark" desc="Easy on eyes" selected={theme==="dark"} onClick={() => setTheme("dark")} />
           <RadioCard icon={I.monitor} label="System" desc="Follows OS" selected={theme==="system"} onClick={() => setTheme("system")} />
