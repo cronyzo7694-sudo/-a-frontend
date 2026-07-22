@@ -50,6 +50,11 @@ const STATUS_FILTERS: { key: FilterKey; label: string }[] = [
   { key: "in_progress", label: "In Progress" },
 ];
 
+// A finished attempt can be submitted / auto_submitted / evaluated / completed.
+function isDone(status?: string): boolean {
+  return ["submitted", "auto_submitted", "evaluated", "completed"].includes(status || "");
+}
+
 function scoreColor(pct: number): string {
   if (pct >= 80) return "text-emerald-500";
   if (pct >= 60) return "text-blue-500";
@@ -221,7 +226,7 @@ export function AttemptsPage() {
 
   /* ── Computed stats ──────────────────── */
   const stats = useMemo(() => {
-    const completed = items.filter((a) => a.status === "completed" || a.status === "submitted");
+    const completed = items.filter((a) => isDone(a.status));
     const total = completed.length;
     const avgScore = total > 0 ? Math.round(completed.reduce((s, a) => s + (a.percentage || 0), 0) / total) : 0;
     const avgAccuracy = total > 0 ? Math.round(completed.reduce((s, a) => {
@@ -239,7 +244,7 @@ export function AttemptsPage() {
     let arr = [...items];
 
     // Status filter
-    if (filter === "completed") arr = arr.filter((a) => a.status === "completed" || a.status === "submitted");
+    if (filter === "completed") arr = arr.filter((a) => isDone(a.status));
     if (filter === "in_progress") arr = arr.filter((a) => a.status === "in_progress");
 
     // Search
@@ -351,7 +356,7 @@ export function AttemptsPage() {
               {f.label}
               {f.key !== "all" && (
                 <span className="text-[10px] opacity-60">
-                  {items.filter((a) => f.key === "completed" ? (a.status === "completed" || a.status === "submitted") : a.status === "in_progress").length}
+                  {items.filter((a) => f.key === "completed" ? isDone(a.status) : a.status === "in_progress").length}
                 </span>
               )}
             </button>

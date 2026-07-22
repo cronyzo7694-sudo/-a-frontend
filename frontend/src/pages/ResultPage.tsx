@@ -50,16 +50,19 @@ export function ResultPage() {
   // pastes it) and open the AI site. ChatGPT/Gemini no longer reliably auto-fill
   // from a URL param, so clipboard is the dependable way. Zero tokens for us.
   const [copiedFor, setCopiedFor] = useState<string | null>(null);
-  const askExternal = async (provider: "chatgpt" | "gemini", q: any) => {
+  const AI_SITES: Record<string, { label: string; url: string }> = {
+    chatgpt: { label: "🤖 ChatGPT", url: "https://chat.openai.com/" },
+    gemini: { label: "✨ Gemini", url: "https://gemini.google.com/app" },
+    claude: { label: "🧠 Claude", url: "https://claude.ai/new" },
+    perplexity: { label: "🔎 Perplexity", url: "https://www.perplexity.ai/" },
+    deepseek: { label: "🐳 DeepSeek", url: "https://chat.deepseek.com/" },
+  };
+  const askExternal = async (provider: string, q: any) => {
     const text = buildAskText(q);
     try { await navigator.clipboard?.writeText(text); } catch { /* ignore */ }
     setCopiedFor(`${provider}-${q?.id}`);
     setTimeout(() => setCopiedFor(null), 2500);
-    const urls: Record<string, string> = {
-      chatgpt: "https://chat.openai.com/",
-      gemini: "https://gemini.google.com/app",
-    };
-    window.open(urls[provider], "_blank", "noopener,noreferrer");
+    window.open(AI_SITES[provider]?.url || "https://www.google.com", "_blank", "noopener,noreferrer");
   };
 
   if (isLoading) {
@@ -372,23 +375,26 @@ export function ResultPage() {
                               </div>
                             );
                           }
-                          // No file explanation -> let student ask ChatGPT/Gemini.
+                          // No file explanation -> let student ask any AI.
                           // We copy the question to clipboard + open the AI site.
-                          const copiedC = copiedFor === `chatgpt-${item.question.id}`;
-                          const copiedG = copiedFor === `gemini-${item.question.id}`;
                           return (
                             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                              <span className="text-[11px] text-muted-foreground">
-                                {lang === "hi" ? "AI से समझें:" : "Ask AI:"}
+                              <span className="text-[11px] text-muted-foreground w-full sm:w-auto">
+                                {lang === "hi" ? "AI से समझें (सवाल कॉपी होकर खुलेगा, पेस्ट करें):" : "Ask AI (question is copied — just paste):"}
                               </span>
-                              <button onClick={() => askExternal("chatgpt", item.question)}
-                                className="rounded-lg border px-3 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Copy question + open ChatGPT">
-                                {copiedC ? (lang === "hi" ? "✅ कॉपी हो गया, पेस्ट करें" : "✅ Copied! Paste it") : "🤖 ChatGPT"}
-                              </button>
-                              <button onClick={() => askExternal("gemini", item.question)}
-                                className="rounded-lg border px-3 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Copy question + open Gemini">
-                                {copiedG ? (lang === "hi" ? "✅ कॉपी हो गया, पेस्ट करें" : "✅ Copied! Paste it") : "✨ Gemini"}
-                              </button>
+                              {Object.entries(AI_SITES).map(([key, meta]) => {
+                                const copied = copiedFor === `${key}-${item.question.id}`;
+                                return (
+                                  <button
+                                    key={key}
+                                    onClick={() => askExternal(key, item.question)}
+                                    className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors"
+                                    title={`Copy question + open ${meta.label}`}
+                                  >
+                                    {copied ? (lang === "hi" ? "✅ कॉपी!" : "✅ Copied!") : meta.label}
+                                  </button>
+                                );
+                              })}
                             </div>
                           );
                         })()}
