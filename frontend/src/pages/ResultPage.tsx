@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { attemptsApi, type AttemptAnalytics } from "@/lib/api";
 import { usePlatformStore } from "@/stores/platformStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,8 @@ export function ResultPage() {
   });
   // Per-question explanation cache { [questionId]: { en, hi } }
   const [expl, setExpl] = useState<Record<number, { en?: string; hi?: string }>>({});
+  // Which question's explanation is currently being generated
+  const [explBusy, setExplBusy] = useState<number | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["review", id],
@@ -30,31 +32,20 @@ export function ResultPage() {
     enabled: Number.isFinite(id),
   });
 
-  // Fetch/generate explanations for questions that don't already have one in
-  // the chosen language. Bound to the question id -> can never mismatch.
-  useEffect(() => {
-    const items: any[] = (data as any)?.items || [];
-    if (!items.length) return;
-    let cancelled = false;
-    (async () => {
-      for (const it of items) {
-        if (cancelled) break;
-        const qid = it.question_id;
-        const q = it.question;
-        if (!q) continue;
-        const haveFile = lang === "hi" ? (q.explanation_hi || q.explanation) : q.explanation;
-        const haveCache = (expl[qid] || {})[lang];
-        if (haveFile || haveCache) continue;
-        try {
-          const res = await attemptsApi.questionExplanation(qid, lang);
-          if (!cancelled && res?.explanation) {
-            setExpl((m) => ({ ...m, [qid]: { ...(m[qid] || {}), [lang]: res.explanation } }));
-          }
-        } catch { /* ignore */ }
+  // On-demand: fetch/generate explanation for ONE question when user clicks.
+  const loadExplanation = async (qid: number, q: any) => {
+    // already have it (file or cache)?
+    const fileExpl = lang === "hi" ? (q?.explanation_hi || q?.explanation) : q?.explanation;
+    if (fileExpl || (expl[qid] || {})[lang]) return;
+    setExplBusy(qid);
+    try {
+      const res = await attemptsApi.questionExplanation(qid, lang);
+      if (res?.explanation) {
+        setExpl((m) => ({ ...m, [qid]: { ...(m[qid] || {}), [lang]: res.explanation } }));
       }
-    })();
-    return () => { cancelled = true; };
-  }, [data, lang, expl]);
+    } catch { /* ignore */ }
+    finally { setExplBusy(null); }
+  };
 
   if (isLoading) {
     return (
@@ -356,20 +347,28 @@ export function ResultPage() {
                             ? (item.question.explanation_hi || item.question.explanation)
                             : item.question.explanation;
                           const shown = lang === "hi" ? (cached.hi || fileExpl) : (cached.en || fileExpl);
-                          if (!shown) {
+                          const busy = explBusy === item.question_id;
+                          if (shown) {
                             return (
-                              <div className="mt-2 text-[11px] text-slate-400 animate-pulse">
-                                {lang === "hi" ? "व्याख्या तैयार हो रही है…" : "Explanation loading…"}
+                              <div className="mt-2 rounded border bg-white/80 p-2">
+                                <div className="text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">
+                                  {lang === "hi" ? "व्याख्या" : "Explanation"}
+                                </div>
+                                <MathText text={shown} />
                               </div>
                             );
                           }
+                          // No explanation yet -> show a button (on-demand)
                           return (
-                            <div className="mt-2 rounded border bg-white/80 p-2">
-                              <div className="text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">
-                                {lang === "hi" ? "व्याख्या" : "Explanation"}
-                              </div>
-                              <MathText text={shown} />
-                            </div>
+                            <button
+                              onClick={() => loadExplanation(item.question_id, item.question)}
+                              disabled={busy || explBusy !== null}
+                              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
+                            >
+                              {busy
+                                ? (lang === "hi" ? "💡 व्याख्या बन रही है…" : "💡 Generating…")
+                                : (lang === "hi" ? "💡 व्याख्या देखें" : "💡 Explain")}
+                            </button>
                           );
                         })()}
                       </div>
