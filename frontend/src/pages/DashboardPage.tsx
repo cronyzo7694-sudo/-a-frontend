@@ -242,7 +242,7 @@ export function DashboardPage() {
               karein — taaki sabhi log is website ka poora fayda le sakein. Agar in tests se aapko madad mile,
               to zaroor support karein. 🙏
               <br />
-              <span className="text-emerald-800/70">Har donation seedha website ko fast + free banaye rakhne me lagega. Aapki safety ke liye payment Razorpay se secure hai.</span>
+              <span className="text-emerald-800/70">Sirf jitna aaram se de sako — ₹10, ₹20 kuch bhi. Koi zabardasti nahi, poori tarah aapki marzi. Jitna type karoge bas utna hi katega, ek rupya extra nahi. 🙏</span>
             </p>
           </div>
           <div className="shrink-0 flex flex-col items-center gap-2">

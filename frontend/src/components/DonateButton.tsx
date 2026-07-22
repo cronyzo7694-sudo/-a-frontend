@@ -10,7 +10,7 @@ export function DonateButton({ buttonId }: { buttonId?: string }) {
   const id =
     buttonId ||
     (import.meta as any).env?.VITE_RAZORPAY_BUTTON_ID ||
-    ""; // <-- put pl_XXXXXXXX here or in env
+    "pl_TGUYMtSPnvooLb"; // Razorpay donation button id
 
   useEffect(() => {
     if (!id || !ref.current) return;
