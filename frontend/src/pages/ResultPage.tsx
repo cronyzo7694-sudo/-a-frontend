@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { attemptsApi, type AttemptAnalytics } from "@/lib/api";
 import { usePlatformStore } from "@/stores/platformStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,11 +17,44 @@ export function ResultPage() {
   const showAnalytics = isEnabled("ENABLE_ANALYTICS", true);
   const showCoach = isEnabled("ENABLE_AI_COACH", true);
 
+  // Result language defaults to the language the test was taken in.
+  const [lang, setLang] = useState<"en" | "hi">(() => {
+    try { return (localStorage.getItem("exam_lang") as "en" | "hi") || "en"; } catch { return "en"; }
+  });
+  // Per-question explanation cache { [questionId]: { en, hi } }
+  const [expl, setExpl] = useState<Record<number, { en?: string; hi?: string }>>({});
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["review", id],
     queryFn: () => attemptsApi.review(id),
     enabled: Number.isFinite(id),
   });
+
+  // Fetch/generate explanations for questions that don't already have one in
+  // the chosen language. Bound to the question id -> can never mismatch.
+  useEffect(() => {
+    const items: any[] = (data as any)?.items || [];
+    if (!items.length) return;
+    let cancelled = false;
+    (async () => {
+      for (const it of items) {
+        if (cancelled) break;
+        const qid = it.question_id;
+        const q = it.question;
+        if (!q) continue;
+        const haveFile = lang === "hi" ? (q.explanation_hi || q.explanation) : q.explanation;
+        const haveCache = (expl[qid] || {})[lang];
+        if (haveFile || haveCache) continue;
+        try {
+          const res = await attemptsApi.questionExplanation(qid, lang);
+          if (!cancelled && res?.explanation) {
+            setExpl((m) => ({ ...m, [qid]: { ...(m[qid] || {}), [lang]: res.explanation } }));
+          }
+        } catch { /* ignore */ }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [data, lang, expl]);
 
   if (isLoading) {
     return (
@@ -214,8 +248,19 @@ export function ResultPage() {
       ) : null}
 
       <Card className="shadow-none border-slate-200">
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-semibold">Question review</CardTitle>
+        <CardHeader className="py-3 px-4 flex-row items-center justify-between gap-2">
+          <CardTitle className="text-sm font-semibold">
+            {lang === "hi" ? "प्रश्न समीक्षा" : "Question review"}
+          </CardTitle>
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as "en" | "hi")}
+            className="h-8 rounded-lg border bg-card text-xs px-2 cursor-pointer focus:outline-none"
+            title="Language"
+          >
+            <option value="en">English</option>
+            <option value="hi">हिंदी</option>
+          </select>
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-3">
           {!data.items?.length ? (
@@ -255,36 +300,78 @@ export function ResultPage() {
                   {item.question ? (
                     <>
                       <MathText
-                        text={item.question.question_text}
-                        html={item.question.question_html}
+                        text={
+                          lang === "hi"
+                            ? (item.question.question_text_hi || item.question.question_text)
+                            : item.question.question_text
+                        }
+                        html={lang === "hi" ? null : item.question.question_html}
                         className="font-medium mb-2 text-sm"
                       />
+                      {/* Options in chosen language, highlighting correct + chosen */}
+                      {Array.isArray(item.question.options) && item.question.options.length > 0 && (
+                        <div className="space-y-1 mb-2">
+                          {item.question.options.map((o: any) => {
+                            const key = o.option_key;
+                            const isCorrect = String(item.question.correct_answer) === String(key);
+                            const isChosen = String(item.selected_answer) === String(key);
+                            const otext = lang === "hi" ? (o.option_text_hi || o.option_text) : o.option_text;
+                            return (
+                              <div
+                                key={key}
+                                className={cn(
+                                  "text-[13px] rounded px-2 py-1 border",
+                                  isCorrect && "border-emerald-300 bg-emerald-50",
+                                  isChosen && !isCorrect && "border-red-300 bg-red-50",
+                                  !isCorrect && !isChosen && "border-transparent"
+                                )}
+                              >
+                                <span className="font-semibold mr-1">{key}.</span>
+                                {otext}
+                                {isCorrect && <span className="ml-1 text-emerald-600">✓</span>}
+                                {isChosen && !isCorrect && <span className="ml-1 text-red-600">✕</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                       <div className="text-sm space-y-1">
                         <div>
-                          <span className="text-muted-foreground">Your answer: </span>
+                          <span className="text-muted-foreground">{lang === "hi" ? "आपका उत्तर: " : "Your answer: "}</span>
                           <span className="font-medium">
                             {formatAns(item.selected_answer) || "—"}
                           </span>
                         </div>
                         {item.question.correct_answer != null ? (
                           <div>
-                            <span className="text-muted-foreground">Correct: </span>
+                            <span className="text-muted-foreground">{lang === "hi" ? "सही उत्तर: " : "Correct: "}</span>
                             <span className="font-medium text-emerald-700">
                               {formatAns(item.question.correct_answer)}
                             </span>
                           </div>
                         ) : null}
-                        {item.question.explanation ? (
-                          <div className="mt-2 rounded border bg-white/80 p-2">
-                            <div className="text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">
-                              Explanation
+                        {(() => {
+                          const cached = expl[item.question_id] || {};
+                          const fileExpl = lang === "hi"
+                            ? (item.question.explanation_hi || item.question.explanation)
+                            : item.question.explanation;
+                          const shown = lang === "hi" ? (cached.hi || fileExpl) : (cached.en || fileExpl);
+                          if (!shown) {
+                            return (
+                              <div className="mt-2 text-[11px] text-slate-400 animate-pulse">
+                                {lang === "hi" ? "व्याख्या तैयार हो रही है…" : "Explanation loading…"}
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="mt-2 rounded border bg-white/80 p-2">
+                              <div className="text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">
+                                {lang === "hi" ? "व्याख्या" : "Explanation"}
+                              </div>
+                              <MathText text={shown} />
                             </div>
-                            <MathText
-                              text={item.question.explanation}
-                              html={item.question.explanation_html}
-                            />
-                          </div>
-                        ) : null}
+                          );
+                        })()}
                       </div>
                     </>
                   ) : null}

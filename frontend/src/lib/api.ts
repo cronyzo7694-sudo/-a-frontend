@@ -566,6 +566,11 @@ export type AttemptAnalytics = {
 export const attemptsApi = {
   start: (examId: number) =>
     api.post<PlayerPayload>("/attempts/start", { exam_id: examId }),
+  questionExplanation: (questionId: number, lang: "hi" | "en") =>
+    api.post<{ lang: string; explanation: string }>(
+      `/attempts/questions/${questionId}/explanation`,
+      { lang }
+    ),
   translateQuestion: (questionId: number, lang: "hi" | "en") =>
     api.post<{
       lang: string;

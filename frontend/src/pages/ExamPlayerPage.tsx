@@ -281,7 +281,11 @@ export function ExamPlayerPage() {
           {/* Language toggle — real-paper style */}
           <select
             value={lang}
-            onChange={(e) => setLang(e.target.value as "en" | "hi")}
+            onChange={(e) => {
+              const v = e.target.value as "en" | "hi";
+              setLang(v);
+              try { localStorage.setItem("exam_lang", v); } catch { /* ignore */ }
+            }}
             className="h-8 rounded bg-[#2a2f36] text-white text-xs px-2 border border-white/10 cursor-pointer focus:outline-none"
             title="Question language"
           >
