@@ -364,6 +364,39 @@ export function ExamsPage() {
                 Date.now() - createdAt.getTime() < 7 * 24 * 3600 * 1000;
 
               return (
+                (exam as any).coming_soon ? (
+                  /* COMING SOON — greyed, not clickable */
+                  <div
+                    key={exam.id}
+                    className="relative flex flex-col rounded-2xl border border-dashed bg-muted/30 p-4 opacity-90 select-none overflow-hidden"
+                    aria-disabled="true"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center grayscale opacity-60"
+                        style={{ backgroundColor: color + "18" }}
+                        dangerouslySetInnerHTML={{ __html: icon }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold leading-snug truncate text-muted-foreground">
+                          {exam.title}
+                        </h3>
+                        <p className="text-[11px] text-muted-foreground/70 line-clamp-2 mt-0.5 leading-relaxed">
+                          {exam.description || "No description"}
+                        </p>
+                      </div>
+                    </div>
+                    {/* Big COMING SOON banner */}
+                    <div className="mt-5 mb-2 flex flex-col items-center justify-center py-4">
+                      <span className="text-lg sm:text-xl font-extrabold tracking-widest text-muted-foreground/70">
+                        COMING SOON
+                      </span>
+                      <span className="text-[11px] text-muted-foreground/60 mt-1">
+                        Tests jald hi add honge
+                      </span>
+                    </div>
+                  </div>
+                ) : (
                 <Link
                   key={exam.id}
                   to="/exams/$examId"
@@ -432,6 +465,7 @@ export function ExamsPage() {
                     </button>
                   </div>
                 </Link>
+                )
               );
             })}
           </div>
