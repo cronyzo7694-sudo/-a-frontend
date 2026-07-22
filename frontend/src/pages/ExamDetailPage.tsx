@@ -86,6 +86,14 @@ export function ExamDetailPage() {
   const reset = useExamPlayerStore((s) => s.reset);
 
   const [starting, setStarting] = useState<string | null>(null);
+  // After 3s of "starting", show a richer building animation inside the card
+  // (Render free tier can be slow to wake). Keyed by child id.
+  const [slowStart, setSlowStart] = useState(false);
+  useEffect(() => {
+    if (!starting) { setSlowStart(false); return; }
+    const t = setTimeout(() => setSlowStart(true), 3000);
+    return () => clearTimeout(t);
+  }, [starting]);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [descOpen, setDescOpen] = useState(false);
@@ -460,8 +468,29 @@ export function ExamDetailPage() {
                   key={child.id}
                   onClick={() => start(child.id)}
                   disabled={!!starting}
-                  className="group relative flex flex-col text-left rounded-xl border bg-card p-3.5 hover:border-primary/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
+                  className="group relative flex flex-col text-left rounded-xl border bg-card p-3.5 hover:border-primary/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 disabled:opacity-100 disabled:cursor-wait overflow-hidden"
                 >
+                  {/* Building animation overlay while this test loads (esp. after 3s) */}
+                  {isStarting && (
+                    <div className="absolute inset-0 z-10 bg-card/95 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2 px-3">
+                      {/* animated bars — feels like something is being built */}
+                      <div className="flex items-end gap-1 h-6">
+                        {[0,1,2,3,4].map((b) => (
+                          <span
+                            key={b}
+                            className="w-1.5 rounded-sm bg-primary/70 animate-pulse"
+                            style={{ height: `${8 + ((b*7)%16)}px`, animationDelay: `${b*0.12}s`, animationDuration: "0.9s" }}
+                          />
+                        ))}
+                      </div>
+                      <div className="w-full max-w-[160px] h-1 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full w-1/3 bg-primary rounded-full animate-[cardload_1.1s_ease-in-out_infinite]" />
+                      </div>
+                      <div className="text-[10px] font-medium text-primary text-center leading-tight">
+                        {slowStart ? "Aapka test taiyaar ho raha hai…" : "Test khul raha hai…"}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="text-[13px] font-medium leading-snug line-clamp-2 pr-14">
                       {catIcon(c)}{" "}
