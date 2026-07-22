@@ -32,6 +32,35 @@ export function ResultPage() {
     enabled: Number.isFinite(id),
   });
 
+  // Build a clean prompt text for a question (used by external AI buttons).
+  const buildAskText = (q: any) => {
+    const qt = lang === "hi" ? (q?.question_text_hi || q?.question_text) : q?.question_text;
+    const opts = (q?.options || [])
+      .map((o: any) => {
+        const t = lang === "hi" ? (o.option_text_hi || o.option_text) : o.option_text;
+        return `${o.option_key}) ${t}`;
+      })
+      .join("\n");
+    const correct = q?.correct_answer != null ? `\nCorrect answer: ${q.correct_answer}` : "";
+    const ask = lang === "hi"
+      ? "\n\nEs question ko step-by-step Hindi me samjhao."
+      : "\n\nExplain this question step by step.";
+    return `${qt || ""}\n${opts}${correct}${ask}`;
+  };
+
+  // Open the question in an external AI (zero tokens for us).
+  const askExternal = (provider: "chatgpt" | "gemini" | "perplexity", q: any) => {
+    const text = encodeURIComponent(buildAskText(q));
+    const urls: Record<string, string> = {
+      chatgpt: `https://chat.openai.com/?q=${text}`,
+      gemini: `https://gemini.google.com/app?q=${text}`,
+      perplexity: `https://www.perplexity.ai/search?q=${text}`,
+    };
+    // copy to clipboard as a fallback (some AI sites ignore the query param)
+    try { navigator.clipboard?.writeText(decodeURIComponent(text)); } catch { /* ignore */ }
+    window.open(urls[provider], "_blank", "noopener,noreferrer");
+  };
+
   // On-demand: fetch/generate explanation for ONE question when user clicks.
   const loadExplanation = async (qid: number, q: any) => {
     // already have it (file or cache)?
@@ -358,17 +387,51 @@ export function ResultPage() {
                               </div>
                             );
                           }
-                          // No explanation yet -> show a button (on-demand)
+                          // While generating: clear animated feedback
+                          if (busy) {
+                            return (
+                              <div className="mt-2 rounded border border-primary/30 bg-primary/5 p-3 flex items-center gap-3">
+                                <span className="relative flex h-5 w-5 shrink-0">
+                                  <span className="absolute inset-0 rounded-full border-2 border-primary/20" />
+                                  <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+                                </span>
+                                <div className="flex-1">
+                                  <div className="text-xs font-medium text-primary">
+                                    {lang === "hi" ? "AI व्याख्या बना रहा है…" : "AI is writing the explanation…"}
+                                  </div>
+                                  <div className="mt-1 h-1 w-full max-w-[180px] rounded-full bg-muted overflow-hidden">
+                                    <div className="h-full w-1/3 bg-primary rounded-full animate-[cardload_1.1s_ease-in-out_infinite]" />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          // No explanation yet -> our AI button + external AI buttons
                           return (
-                            <button
-                              onClick={() => loadExplanation(item.question_id, item.question)}
-                              disabled={busy || explBusy !== null}
-                              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
-                            >
-                              {busy
-                                ? (lang === "hi" ? "💡 व्याख्या बन रही है…" : "💡 Generating…")
-                                : (lang === "hi" ? "💡 व्याख्या देखें" : "💡 Explain")}
-                            </button>
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              <button
+                                onClick={() => loadExplanation(item.question_id, item.question)}
+                                disabled={explBusy !== null}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
+                              >
+                                {lang === "hi" ? "💡 व्याख्या देखें" : "💡 Explain"}
+                              </button>
+                              <span className="text-[10px] text-muted-foreground">
+                                {lang === "hi" ? "या पूछें:" : "or ask:"}
+                              </span>
+                              <button onClick={() => askExternal("chatgpt", item.question)}
+                                className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Ask ChatGPT">
+                                ChatGPT
+                              </button>
+                              <button onClick={() => askExternal("gemini", item.question)}
+                                className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Ask Gemini">
+                                Gemini
+                              </button>
+                              <button onClick={() => askExternal("perplexity", item.question)}
+                                className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium hover:bg-muted transition-colors" title="Ask Perplexity">
+                                Perplexity
+                              </button>
+                            </div>
                           );
                         })()}
                       </div>
