@@ -4,6 +4,8 @@ import { examsApi, type Exam } from "@/lib/api";
 import { formatDuration } from "@/lib/utils";
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useExamPlayerStore } from "@/stores/examPlayerStore";
+import { Loader } from "@/components/Loader";
+import { useSlowFlag } from "@/lib/useSlowFlag";
 
 /* ══════════════════════════════════════════════════════════════
    Constants
@@ -122,6 +124,7 @@ export function ExamsPage() {
     queryKey: ["exams"],
     queryFn: () => examsApi.list("parent_id=null"),
   });
+  const slowLoad = useSlowFlag(isLoading, 3000);
 
   const items: Exam[] = useMemo(() => (data?.items || []), [data]);
 
@@ -222,7 +225,7 @@ export function ExamsPage() {
   );
 
   /* ── Loading ──────────────────────────── */
-  if (isLoading) return <Skeleton />;
+  if (isLoading) return slowLoad ? <Loader title="Loading exams" messages={["Server jaga rahe hain…", "Exams la rahe hain…", "Bas thoda aur…"]} /> : <Skeleton />;
 
   /* ══════════════════════════════════════════════════════════ */
   return (

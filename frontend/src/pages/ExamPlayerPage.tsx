@@ -135,6 +135,28 @@ export function ExamPlayerPage() {
     }
   }, [result, id, navigate]);
 
+  // Current question id (safe even before booted). Used by the translation
+  // effect below — this hook MUST stay above any early return (React rules).
+  const curQId = getCurrent()?.question?.id;
+  useEffect(() => {
+    if (lang !== "hi" || !curQId) return;
+    if (trCache[curQId]) return; // already have it
+    let cancelled = false;
+    setTranslating(true);
+    attemptsApi
+      .translateQuestion(curQId, "hi")
+      .then((res) => {
+        if (!cancelled) setTrCache((m) => ({ ...m, [curQId]: res }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setTranslating(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, curQId, trCache]);
+
   if (booting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -205,27 +227,6 @@ export function ExamPlayerPage() {
   const current = getCurrent();
   const stats = summary();
 
-  // Fetch Hindi translation for the current question when HI is selected.
-  const curQId = current?.question?.id;
-  useEffect(() => {
-    if (lang !== "hi" || !curQId) return;
-    if (trCache[curQId]) return; // already have it
-    let cancelled = false;
-    setTranslating(true);
-    attemptsApi
-      .translateQuestion(curQId, "hi")
-      .then((res) => {
-        if (!cancelled) setTrCache((m) => ({ ...m, [curQId]: res }));
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setTranslating(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [lang, curQId, trCache]);
-
   // Build the question object to render in the chosen language.
   const displayQuestion = (() => {
     if (!current?.question) return current?.question;
@@ -250,6 +251,22 @@ export function ExamPlayerPage() {
 
   return (
     <div className="h-screen flex flex-col bg-[#e8eaed] exam-player-active select-none">
+      {/* Full-screen overlay while the paper is being submitted/evaluated so the
+          user clearly sees that submission is in progress. */}
+      {submitting && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-2xl px-8 py-6 shadow-2xl">
+            <Loader
+              title="Paper submit ho raha hai"
+              messages={[
+                "Aapke jawab save kiye ja rahe hain…",
+                "Result calculate ho raha hai…",
+                "Bas thoda aur…",
+              ]}
+            />
+          </div>
+        </div>
+      )}
       <header className="h-12 bg-[#1b1f24] text-white flex items-center justify-between px-3 gap-3 shrink-0 border-b border-black/30">
         <div className="min-w-0">
           <div className="font-medium truncate text-sm">{examTitle}</div>

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration, formatDate } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
+import { Loader } from "@/components/Loader";
+import { useSlowFlag } from "@/lib/useSlowFlag";
 
 /* ══════════════════════════════════════════════════════════════
    Icons — inline SVG for zero dependency
@@ -149,6 +151,7 @@ export function DashboardPage() {
     queryFn: () => analyticsApi.dashboard(),
     enabled: analyticsOn,
   });
+  const slowLoad = useSlowFlag(isLoading, 3000);
 
   // ── Derived data ────────────────────────
   const stats = (data?.quick_stats || {}) as Record<string, any>;
@@ -167,7 +170,7 @@ export function DashboardPage() {
     return (data.recent_attempts as any[]).find((a: any) => a.status === "in_progress") ?? null;
   }, [data]);
 
-  if (isLoading) return <Skeleton />;
+  if (isLoading) return slowLoad ? <Loader title="Dashboard load ho raha hai" messages={["Server jaga rahe hain…", "Aapka data la rahe hain…", "Bas thoda aur…"]} /> : <Skeleton />;
 
   /* ═══════════════════════════════════════════════════════════ */
   return (

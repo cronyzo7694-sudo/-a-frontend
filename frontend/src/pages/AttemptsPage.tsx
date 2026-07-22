@@ -3,6 +3,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { attemptsApi, type Attempt } from "@/lib/api";
 import { formatDate, formatDuration } from "@/lib/utils";
 import { useState, useMemo, useCallback } from "react";
+import { Loader } from "@/components/Loader";
+import { useSlowFlag } from "@/lib/useSlowFlag";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -213,6 +215,7 @@ export function AttemptsPage() {
     queryKey: ["attempts"],
     queryFn: () => attemptsApi.list(),
   });
+  const slowLoad = useSlowFlag(isLoading, 3000);
 
   const items: Attempt[] = useMemo(() => (data?.items || []), [data]);
 
@@ -264,7 +267,7 @@ export function AttemptsPage() {
 
   const timelineGroups = view === "timeline" ? groupByDate(filtered) : null;
 
-  if (isLoading) return <Skeleton />;
+  if (isLoading) return slowLoad ? <Loader title="Attempts load ho rahe hain" messages={["Server jaga rahe hain…", "Aapke tests la rahe hain…", "Bas thoda aur…"]} /> : <Skeleton />;
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-6 animate-in fade-in duration-300">
