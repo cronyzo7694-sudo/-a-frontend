@@ -181,6 +181,14 @@ export function ExamsPage() {
         );
     }
 
+    // Always push "coming soon" exams (no tests yet) to the end, keeping the
+    // chosen sort order within each group. Ready/clickable exams come first.
+    arr.sort((a, b) => {
+      const ca = (a as any).coming_soon ? 1 : 0;
+      const cb = (b as any).coming_soon ? 1 : 0;
+      return ca - cb;
+    });
+
     return arr;
   }, [items, activeCat, search, sort]);
 
