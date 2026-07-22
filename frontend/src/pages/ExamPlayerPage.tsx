@@ -59,6 +59,12 @@ export function ExamPlayerPage() {
   const [bootError, setBootError] = useState("");
   const [booting, setBooting] = useState(true);
 
+  // Language toggle (English / Hindi). Translations are fetched on demand and
+  // cached in this map so we never re-fetch a question in the same session.
+  const [lang, setLang] = useState<"en" | "hi">("en");
+  const [trCache, setTrCache] = useState<Record<string, any>>({});
+  const [translating, setTranslating] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -199,6 +205,49 @@ export function ExamPlayerPage() {
   const current = getCurrent();
   const stats = summary();
 
+  // Fetch Hindi translation for the current question when HI is selected.
+  const curQId = current?.question?.id;
+  useEffect(() => {
+    if (lang !== "hi" || !curQId) return;
+    if (trCache[curQId]) return; // already have it
+    let cancelled = false;
+    setTranslating(true);
+    attemptsApi
+      .translateQuestion(curQId, "hi")
+      .then((res) => {
+        if (!cancelled) setTrCache((m) => ({ ...m, [curQId]: res }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setTranslating(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, curQId, trCache]);
+
+  // Build the question object to render in the chosen language.
+  const displayQuestion = (() => {
+    if (!current?.question) return current?.question;
+    if (lang === "en") return current.question;
+    const tr = curQId ? trCache[curQId] : null;
+    if (!tr) return current.question; // fall back to EN until translation arrives
+    const optByKey: Record<string, string> = {};
+    (tr.options || []).forEach((o: any) => { optByKey[o.option_key] = o.option_text; });
+    return {
+      ...current.question,
+      question_text: tr.question_text || current.question.question_text,
+      question_html: null,
+      paragraph_text: tr.paragraph_text || current.question.paragraph_text,
+      paragraph_html: null,
+      options: (current.question.options || []).map((o: any) => ({
+        ...o,
+        option_text: optByKey[o.option_key] || o.option_text,
+        option_html: null,
+      })),
+    };
+  })();
+
   return (
     <div className="h-screen flex flex-col bg-[#e8eaed] exam-player-active select-none">
       <header className="h-12 bg-[#1b1f24] text-white flex items-center justify-between px-3 gap-3 shrink-0 border-b border-black/30">
@@ -212,6 +261,16 @@ export function ExamPlayerPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Language toggle — real-paper style */}
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as "en" | "hi")}
+            className="h-8 rounded bg-[#2a2f36] text-white text-xs px-2 border border-white/10 cursor-pointer focus:outline-none"
+            title="Question language"
+          >
+            <option value="en">English</option>
+            <option value="hi">हिंदी</option>
+          </select>
           {calculatorAllowed ? (
             <span className="hidden sm:inline text-[11px] text-slate-400 border border-white/10 rounded px-2 py-1">
               Calc allowed
@@ -243,8 +302,13 @@ export function ExamPlayerPage() {
                       <Badge className="bg-blue-600">Review</Badge>
                     ) : null}
                   </div>
+                  {lang === "hi" && translating && !trCache[curQId as any] && (
+                    <div className="mb-2 text-[11px] text-slate-500 animate-pulse">
+                      हिंदी में अनुवाद हो रहा है…
+                    </div>
+                  )}
                   <QuestionRenderer
-                    question={current.question}
+                    question={(displayQuestion || current.question) as any}
                     selected={current.answer.selected_answer}
                     onChange={(v) => selectAnswer(v)}
                   />
