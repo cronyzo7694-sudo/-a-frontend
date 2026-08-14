@@ -34,13 +34,21 @@ const PAGE_SIZE = 12;
 
 function detectCategory(title: string): string {
   const t = title.toLowerCase();
+  // Defence first (most specific terms, so NDA/CDS/AFCAT/Agniveer/Army/Navy/etc.
+  // always land in Defence, never get mis-sorted into SSC/UPSC/Police).
+  if (/(nda|cds|afcat|agniveer|army|navy|air force|coast guard|inet|navik|territorial|mns|jag|defence)/.test(t)) return "defence";
+  // Banking (IBPS/SBI/RBI/NABARD/LIC/SEBI)
+  if (/(ibps|sbi|rbi|nabard|lic|sebi)/.test(t)) return "banking";
+  // Railway
+  if (/(railway|rrb|ntpc|group d|alp)/.test(t)) return "railway";
+  // Teaching
+  if (/(ctet|tet)/.test(t)) return "teaching";
+  // SSC — check before police so "SSC GD Constable" / "SSC CPO" stay in SSC
   if (t.includes("ssc")) return "ssc";
-  if (t.includes("ibps") || t.includes("sbi") || t.includes("bank")) return "banking";
-  if (t.includes("rrb") || t.includes("railway") || t.includes("group d")) return "railway";
-  if (t.includes("upsc") || t.includes("cds")) return "upsc";
-  if (t.includes("ctet")) return "teaching";
-  if (t.includes("gd") || t.includes("cpo")) return "police";
-  if (t.includes("defence") || t.includes("nda")) return "defence";
+  // Police
+  if (/(police|cpo|constable|si )/.test(t)) return "police";
+  // UPSC
+  if (/(upsc|civil services)/.test(t)) return "upsc";
   return "ssc";
 }
 
