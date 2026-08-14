@@ -122,7 +122,7 @@ export function ExamsPage() {
   /* ── Data ─────────────────────────────── */
   const { data, isLoading } = useQuery({
     queryKey: ["exams"],
-    queryFn: () => examsApi.list("parent_id=null"),
+    queryFn: () => examsApi.list("parent_id=null&per_page=100"),
   });
   const slowLoad = useSlowFlag(isLoading, 3000);
 

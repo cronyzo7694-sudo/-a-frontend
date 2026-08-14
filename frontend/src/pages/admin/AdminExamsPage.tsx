@@ -101,7 +101,7 @@ export function AdminExamsPage() {
   const [sections, setSections] = useState<string[]>(["General"]);
 
   /* ── Data ────────────────────────────── */
-  const { data, isLoading } = useQuery({ queryKey: ["admin-exams"], queryFn: () => examsApi.list("parent_id=null") });
+  const { data, isLoading } = useQuery({ queryKey: ["admin-exams"], queryFn: () => examsApi.list("parent_id=null&per_page=100") });
   const items: Exam[] = useMemo(() => data?.items || [], [data]);
 
   /* ── Stats ───────────────────────────── */
