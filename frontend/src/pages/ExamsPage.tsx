@@ -20,6 +20,15 @@ const CATEGORIES = [
   { key: "teaching", label: "Teaching", color: "#0d9488" },
   { key: "police", label: "Police", color: "#dc2626" },
   { key: "defence", label: "Defence", color: "#4f46e5" },
+  { key: "state", label: "State Govt", color: "#b45309" },
+  { key: "engineering", label: "Engineering", color: "#475569" },
+  { key: "medical", label: "Medical", color: "#be123c" },
+  { key: "science", label: "Science", color: "#6d28d9" },
+  { key: "law", label: "Law", color: "#15803d" },
+  { key: "management", label: "Management", color: "#0891b2" },
+  { key: "agriculture", label: "Agriculture", color: "#65a30d" },
+  { key: "computer", label: "Computer & IT", color: "#334155" },
+  { key: "finance", label: "Finance & Insurance", color: "#a16207" },
 ] as const;
 
 const SORTS = ["Newest", "Popular", "A-Z", "Updated"] as const;
@@ -34,21 +43,43 @@ const PAGE_SIZE = 12;
 
 function detectCategory(title: string): string {
   const t = title.toLowerCase();
-  // Defence first (most specific terms, so NDA/CDS/AFCAT/Agniveer/Army/Navy/etc.
-  // always land in Defence, never get mis-sorted into SSC/UPSC/Police).
-  if (/(nda|cds|afcat|agniveer|army|navy|air force|coast guard|inet|navik|territorial|mns|jag|defence)/.test(t)) return "defence";
-  // Banking (IBPS/SBI/RBI/NABARD/LIC/SEBI)
-  if (/(ibps|sbi|rbi|nabard|lic|sebi)/.test(t)) return "banking";
-  // Railway
-  if (/(railway|rrb|ntpc|group d|alp)/.test(t)) return "railway";
-  // Teaching
-  if (/(ctet|tet)/.test(t)) return "teaching";
-  // SSC — check before police so "SSC GD Constable" / "SSC CPO" stay in SSC
+  // ----- Most specific / distinct categories first -----
+  // Medical
+  if (/(neet|aiims|inicet|nursing|norcet|paramedical)/.test(t)) return "medical";
+  // Science & Research
+  if (/(iat \(|nest|jest|iit jam|isro|drdo|barc|junior research|phd entrance)/.test(t)) return "science";
+  // Defence (before management so "AFCAT" isn't caught by "cat")
+  if (/\b(nda|cds|afcat|agniveer|army|navy|inet|mns|jag|rifleman)\b|air force|coast guard|navik|territorial|defence/.test(t)) return "defence";
+  // Management
+  if (/\b(cat|xat|cmat|mat|snap|nmat)\b|mba|management aptitude/.test(t)) return "management";
+  // Law / Judiciary
+  if (/(clat|ailet|slat|llb|judicial|civil judge|apo|legal|bar exam|aibe)/.test(t)) return "law";
+  // Agriculture
+  if (/(icar|agriculture|\bagri\b|crop)/.test(t)) return "agriculture";
+  // Computer & IT
+  if (/(nielit|ccc|computer operator|programmer|it officer|technical assistant)/.test(t)) return "computer";
+  // UPSC (before Engineering/Police so UPSC-prefixed stay in UPSC)
+  if (/^upsc/.test(t)) return "upsc";
+  // SSC (before state/police/railway so "SSC Stenographer"/"SSC GD Constable"/
+  // "SSC CPO"/"SSC JE" stay SSC)
   if (t.includes("ssc")) return "ssc";
+  // State Govt / PSC / Patwari / Clerical / University (before Banking so
+  // "State Clerk"/"LDC"/"UDC" stay State)
+  if (/(mppsc|uppsc|bpsc|bihar|rpsc|rajasthan|mpsc|hpsc|haryana|patwari|state cet|state psc|state ssc|state clerk|ldc|udc|clerical|deo|stenographer|office|cuet|university entrance|common entrance|recruitment exams|departmental)/.test(t)) return "state";
+  // Teaching
+  if (/(ctet|tet|ugc net|csir net|\bset\b|jrf|b\.ed|d\.el\.ed|m\.ed|kvs|nvs|dsssb|teacher eligibility|eligibility test|teaching)/.test(t)) return "teaching";
+  // Banking — "clerk" only counts as banking when a bank name is present
+  if (/\b(ibps|sbi|rbi|nabard|sebi)\b|\blic\b|bank|po prelims|po mains|so /.test(t) || (/\bclerk\b/.test(t) && /\b(ibps|sbi|rbi|bank)\b/.test(t))) return "banking";
+  // Railway (before Engineering so "RRB Technician" stays Railway; word-boundary
+  // so "CRPF" is not caught by "rpf")
+  if (/(railway|rrb|ntpc|group d|alp|\brpf\b)/.test(t)) return "railway";
+  // Engineering (GATE, AE/JE, PSU, polytechnic, ITI)
+  if (/\bgate\b|engineering|ae\/je|psu|polytechnic|\biti\b|apprenticeship|trade test|technician/.test(t)) return "engineering";
   // Police
-  if (/(police|cpo|constable|si )/.test(t)) return "police";
-  // UPSC
-  if (/(upsc|civil services)/.test(t)) return "upsc";
+  if (/(police|constable|capf|crpf|bsf|cisf|itbp|ssb|assam rifles|cpo)/.test(t)) return "police";
+  // Insurance & Finance
+  if (/(niacl|nicl|uiic|lic assistant|irdai|sidbi|pfrda|insurance|finance)/.test(t)) return "finance";
+  // Default
   return "ssc";
 }
 
@@ -75,6 +106,15 @@ function iconSvg(key: string) {
     case "teaching": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>`;
     case "police": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M12 2l8 4v4c0 6-8 12-8 12S4 16 4 10V6l8-4z"/></svg>`;
     case "defence": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M12 2l8 4v4c0 6-8 12-8 12S4 16 4 10V6l8-4z"/></svg>`;
+    case "state": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M4 21h16M6 21V8l6-4 6 4v13M9 10h2m2 0h2m-4 4h2m2 0h2"/></svg>`;
+    case "engineering": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>`;
+    case "medical": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 12h6m-3-3v6M8 8h8"/></svg>`;
+    case "science": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M10 3v6L4 19a1 1 0 001 1h14a1 1 0 001-1L14 9V3M7 3h10"/></svg>`;
+    case "law": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M12 3v18M5 6h14M5 6l-2 5a3 3 0 006 0L7 6M19 6l-2 5a3 3 0 006 0l-2-5M9 21h6"/></svg>`;
+    case "management": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M3 21h18M5 21V8l7-4 7 4v13M9 11h2m2 0h2m-4 4h2m2 0h2"/></svg>`;
+    case "agriculture": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><path d="M12 22c0-6-3-10-9-12 0 6 3 10 9 12zM12 22c0-6 3-10 9-12 0 6-3 10-9 12zM12 22V10"/></svg>`;
+    case "computer": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>`;
+    case "finance": return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 11h18M8 7V5h8v2M7 15h2m4 0h2"/></svg>`;
     default: return `<svg width="${dim}" height="${dim}" viewBox="0 0 24 24" ${base}><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>`;
   }
 }
