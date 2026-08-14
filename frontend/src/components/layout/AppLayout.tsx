@@ -44,8 +44,6 @@ type NavItem = {
   bottomNav?: boolean;
 };
 
-const AI_CHAT_URL = "https://anim-kineora.cronyzo7694.workers.dev/";
-
 const navigation: NavGroup[] = [
   {
     label: "Workspace",
@@ -53,7 +51,7 @@ const navigation: NavGroup[] = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/exams", label: "Exams", icon: BookOpen },
       { to: "/attempts", label: "Attempts", icon: ClipboardList },
-      { to: "/ai-chat", label: "AI Chat", icon: Bot, external: true, href: AI_CHAT_URL, highlight: true, badge: "AI" },
+      { to: "/chat", label: "Community Chat", icon: Bot, highlight: true, badge: "New" },
     ],
   },
   {

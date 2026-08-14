@@ -24,6 +24,7 @@ import { ImportPage } from "@/pages/admin/ImportPage";
 import { UsersPage } from "@/pages/admin/UsersPage";
 import { FileBankPage } from "@/pages/admin/FileBankPage";
 import { LegalPage } from "@/pages/LegalPages";
+import { ChatPage } from "@/pages/ChatPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
@@ -220,6 +221,11 @@ const refundRoute = createRoute({
   path: "/refund",
   component: () => <LegalPage path="/refund" />,
 });
+const chatRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/chat",
+  component: ChatPage,
+});
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -247,6 +253,7 @@ const routeTree = rootRoute.addChildren([
     termsRoute,
     privacyRoute,
     refundRoute,
+    chatRoute,
   ]),
 ]);
 
