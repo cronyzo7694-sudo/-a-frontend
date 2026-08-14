@@ -872,3 +872,23 @@ export const notificationsApi = {
     ),
   adminProcessQueue: () => api.post<{ processed: number }>("/notifications/admin/process-queue", {}),
 };
+
+export type UserMessage = {
+  id: number;
+  user_id?: number | null;
+  name?: string | null;
+  email?: string | null;
+  message_type: string;
+  message: string;
+  status: string;
+  created_at?: string;
+};
+
+export const messagesApi = {
+  send: (data: { message: string; message_type?: string; name?: string; email?: string }) =>
+    api.post<{ message: string; item: UserMessage }>("/messages", data),
+  listAdmin: (params?: string) =>
+    api.get<{ items: UserMessage[]; total: number }>(`/messages/admin${params ? `?${params}` : ""}`),
+  setStatus: (id: number, status: string) =>
+    api.post<{ item: UserMessage }>(`/messages/admin/${id}/status`, { status }),
+};

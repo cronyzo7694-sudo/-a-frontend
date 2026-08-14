@@ -5,7 +5,7 @@ import {
   UserRound, Settings, Upload, Users, ChevronDown,
   ChevronLeft, ChevronRight, Search, Sun, Moon, Bell,
   BookOpen, Home, Sparkles, Trophy, Target, Zap,
-  Bot, HelpCircle, FileText, Scale, ShieldCheck, Info,
+  Bot, HelpCircle, FileText, Scale, ShieldCheck, Info, MessageSquare,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, createContext, useContext } from "react";
 import { useAuthStore } from "@/stores/authStore";
@@ -77,6 +77,7 @@ const navigation: NavGroup[] = [
       { to: "/admin/import", label: "Import", icon: Upload, adminOnly: true, flag: "ENABLE_IMPORT" },
       { to: "/admin/file-bank", label: "File Bank", icon: Layers, adminOnly: true, badge: "AI" },
       { to: "/admin/users", label: "Users", icon: Users, adminOnly: true, flag: "ENABLE_ADMIN_PANEL" },
+      { to: "/admin/messages", label: "Messages", icon: MessageSquare, adminOnly: true },
     ],
   },
   {

@@ -25,6 +25,7 @@ import { UsersPage } from "@/pages/admin/UsersPage";
 import { FileBankPage } from "@/pages/admin/FileBankPage";
 import { LegalPage } from "@/pages/LegalPages";
 import { ChatPage } from "@/pages/ChatPage";
+import { MessagesPage } from "@/pages/admin/MessagesPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
@@ -226,6 +227,12 @@ const chatRoute = createRoute({
   path: "/chat",
   component: ChatPage,
 });
+const adminMessagesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/messages",
+  beforeLoad: () => requireAdmin(),
+  component: MessagesPage,
+});
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -254,6 +261,7 @@ const routeTree = rootRoute.addChildren([
     privacyRoute,
     refundRoute,
     chatRoute,
+    adminMessagesRoute,
   ]),
 ]);
 

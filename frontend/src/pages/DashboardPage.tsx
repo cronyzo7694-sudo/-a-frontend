@@ -11,6 +11,12 @@ import { useState, useMemo, useEffect } from "react";
 import { Loader } from "@/components/Loader";
 import { useSlowFlag } from "@/lib/useSlowFlag";
 import { DonateButton } from "@/components/DonateButton";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { messagesApi } from "@/lib/api";
 
 /* ══════════════════════════════════════════════════════════════
    Icons — inline SVG for zero dependency
@@ -147,6 +153,32 @@ export function DashboardPage() {
   const analyticsOn = isEnabled("ENABLE_ANALYTICS", true);
   const navigate = useNavigate();
 
+  // Request-a-test / feedback dialog state
+  const [msgOpen, setMsgOpen] = useState(false);
+  const [msgType, setMsgType] = useState("request");
+  const [msgText, setMsgText] = useState("");
+  const [msgEmail, setMsgEmail] = useState("");
+  const [msgSent, setMsgSent] = useState(false);
+  const [msgSending, setMsgSending] = useState(false);
+
+  const submitMessage = async () => {
+    if (!msgText.trim()) return;
+    setMsgSending(true);
+    try {
+      await messagesApi.send({
+        message: msgText,
+        message_type: msgType,
+        name: user?.full_name || undefined,
+        email: msgEmail || user?.email || undefined,
+      });
+      setMsgSent(true);
+    } catch {
+      // keep open
+    } finally {
+      setMsgSending(false);
+    }
+  };
+
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => analyticsApi.dashboard(),
@@ -222,6 +254,25 @@ export function DashboardPage() {
             <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Day Streak</div>
           </div>
         </div>
+      </div>
+
+      {/* ─── Request a Test / Feedback banner ──── */}
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="shrink-0 w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary" dangerouslySetInnerHTML={{ __html: ii("sparkle", "w-5 h-5") }} />
+          <p className="text-[13px] text-muted-foreground leading-snug">
+            <span className="font-semibold text-foreground">कोई भी test चाहिए?</span>{" "}
+            हमें message भेजो — हम उसे जल्द से जल्द add करने की कोशिश करेंगे। Feedback भी भेज सकते हो।
+          </p>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => { setMsgOpen(true); setMsgSent(false); setMsgType("request"); }}
+          className="rounded-xl gap-1.5 shrink-0 h-8"
+        >
+          <span dangerouslySetInnerHTML={{ __html: ii("lightning", "w-3.5 h-3.5") }} />
+          Message
+        </Button>
       </div>
 
       {/* ─── FREE + Donation banner ────────────── */}
@@ -448,6 +499,62 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ─── Request / Feedback dialog ──────── */}
+      <Dialog open={msgOpen} onOpenChange={(o) => { setMsgOpen(o); if (!o) { setMsgSent(false); setMsgText(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Message / Request a Test</DialogTitle>
+            <DialogDescription>
+              अगर किसी और test की ज़रूरत है या feedback देना है, तो नीचे लिखो। हम जल्द से जल्द add करने की कोशिश करेंगे।
+            </DialogDescription>
+          </DialogHeader>
+          {msgSent ? (
+            <div className="text-center py-6">
+              <p className="text-2xl">🙏</p>
+              <p className="mt-2 text-sm font-medium">Message भेज दिया गया है!</p>
+              <p className="text-xs text-muted-foreground mt-1">धन्यवाद — हम जल्द ही देखेंगे।</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                {[
+                  { k: "request", l: "Request Test" },
+                  { k: "feedback", l: "Feedback" },
+                  { k: "other", l: "Other" },
+                ].map((o) => (
+                  <button
+                    key={o.k}
+                    onClick={() => setMsgType(o.k)}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${msgType === o.k ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground hover:border-primary/40"}`}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+              <Textarea
+                value={msgText}
+                onChange={(e) => setMsgText(e.target.value)}
+                placeholder="बताओ कौन-सा test चाहिए, या कोई feedback…"
+                rows={4}
+              />
+              <Input
+                value={msgEmail}
+                onChange={(e) => setMsgEmail(e.target.value)}
+                placeholder="Email (optional, reply के लिए)"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setMsgOpen(false)}>Close</Button>
+            {!msgSent && (
+              <Button size="sm" onClick={submitMessage} disabled={!msgText.trim() || msgSending} className="gap-1.5">
+                {msgSending ? "Sending…" : "Send"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ─── Popular Exams quick access ─────── */}
       <div className="space-y-3">
