@@ -130,11 +130,11 @@ export function ExamsPage() {
   /* ── Data ─────────────────────────────── */
   const { data, isLoading } = useQuery({
     queryKey: ["exams"],
-    queryFn: () => examsApi.list("parent_id=null&per_page=100"),
+    queryFn: () => examsApi.listAll("parent_id=null"),
   });
   const slowLoad = useSlowFlag(isLoading, 3000);
 
-  const items: Exam[] = useMemo(() => (data?.items || []), [data]);
+  const items: Exam[] = useMemo(() => (data || []), [data]);
 
   /* ── Stats ────────────────────────────── */
   const stats = useMemo(() => {

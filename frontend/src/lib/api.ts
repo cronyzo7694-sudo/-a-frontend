@@ -321,6 +321,24 @@ export type Exam = {
 export const examsApi = {
   list: (params?: string) =>
     api.get<{ items: Exam[]; total: number }>(`/exams${params ? `?${params}` : ""}`),
+  /** Fetch EVERY exam across all pages (unlimited) by looping pagination. */
+  listAll: async (params?: string): Promise<Exam[]> => {
+    const perPage = 500; // backend hard cap
+    const seen = new Map<number, Exam>();
+    let page = 1;
+    for (;;) {
+      const base = params ? `${params}&` : "";
+      const res = await api.get<{ items: Exam[]; total: number }>(
+        `/exams?${base}per_page=${perPage}&page=${page}`
+      );
+      const items = res.items || [];
+      for (const it of items) seen.set(it.id, it);
+      const total = res.total ?? 0;
+      if (items.length === 0 || page * perPage >= total) break;
+      page++;
+    }
+    return Array.from(seen.values());
+  },
   get: (id: number, includeQuestions = false) =>
     api.get<Exam>(`/exams/${id}${includeQuestions ? "?include_questions=true" : ""}`),
   create: (data: Record<string, unknown>) => api.post<{ item: Exam }>("/exams", data),
