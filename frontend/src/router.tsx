@@ -23,6 +23,7 @@ import { AdminExamsPage } from "@/pages/admin/AdminExamsPage";
 import { ImportPage } from "@/pages/admin/ImportPage";
 import { UsersPage } from "@/pages/admin/UsersPage";
 import { FileBankPage } from "@/pages/admin/FileBankPage";
+import { LegalPage } from "@/pages/LegalPages";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
@@ -193,6 +194,33 @@ const adminUsersRoute = createRoute({
   component: UsersPage,
 });
 
+// Static legal/support pages
+const helpRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/help",
+  component: () => <LegalPage path="/help" />,
+});
+const aboutRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/about",
+  component: () => <LegalPage path="/about" />,
+});
+const termsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/terms",
+  component: () => <LegalPage path="/terms" />,
+});
+const privacyRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/privacy",
+  component: () => <LegalPage path="/privacy" />,
+});
+const refundRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/refund",
+  component: () => <LegalPage path="/refund" />,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -214,6 +242,11 @@ const routeTree = rootRoute.addChildren([
     adminImportRoute,
     fileBankRoute,
     adminUsersRoute,
+    helpRoute,
+    aboutRoute,
+    termsRoute,
+    privacyRoute,
+    refundRoute,
   ]),
 ]);
 

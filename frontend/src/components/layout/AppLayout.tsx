@@ -5,6 +5,7 @@ import {
   UserRound, Settings, Upload, Users, ChevronDown,
   ChevronLeft, ChevronRight, Search, Sun, Moon, Bell,
   BookOpen, Home, Sparkles, Trophy, Target, Zap,
+  Bot, HelpCircle, FileText, Scale, ShieldCheck, Info,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, createContext, useContext } from "react";
 import { useAuthStore } from "@/stores/authStore";
@@ -38,7 +39,12 @@ type NavItem = {
   flag?: string;
   badge?: string;
   external?: boolean;
+  href?: string;
+  highlight?: boolean;
+  bottomNav?: boolean;
 };
+
+const AI_CHAT_URL = "https://anim-kineora.cronyzo7694.workers.dev/";
 
 const navigation: NavGroup[] = [
   {
@@ -47,6 +53,7 @@ const navigation: NavGroup[] = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/exams", label: "Exams", icon: BookOpen },
       { to: "/attempts", label: "Attempts", icon: ClipboardList },
+      { to: "/ai-chat", label: "AI Chat", icon: Bot, external: true, href: AI_CHAT_URL, highlight: true, badge: "AI" },
     ],
   },
   {
@@ -72,6 +79,16 @@ const navigation: NavGroup[] = [
       { to: "/admin/import", label: "Import", icon: Upload, adminOnly: true, flag: "ENABLE_IMPORT" },
       { to: "/admin/file-bank", label: "File Bank", icon: Layers, adminOnly: true, badge: "AI" },
       { to: "/admin/users", label: "Users", icon: Users, adminOnly: true, flag: "ENABLE_ADMIN_PANEL" },
+    ],
+  },
+  {
+    label: "Support & Legal",
+    items: [
+      { to: "/help", label: "Help", icon: HelpCircle },
+      { to: "/about", label: "About", icon: Info },
+      { to: "/terms", label: "Terms & Conditions", icon: FileText },
+      { to: "/privacy", label: "Privacy Policy", icon: ShieldCheck },
+      { to: "/refund", label: "Refund / Cancellation", icon: Scale },
     ],
   },
 ];
@@ -199,31 +216,42 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {group.items.map((item) => {
                   const active = pathname === item.to || pathname.startsWith(item.to + "/");
                   const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 group relative",
-                        collapsed && "justify-center px-2",
-                        active
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                      )}
-                    >
-                      <Icon className={cn("w-5 h-5 shrink-0", active && "text-primary")} />
+                  const cls = cn(
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 group relative",
+                    collapsed && "justify-center px-2",
+                    item.highlight
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : active
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  );
+                  const inner = (
+                    <>
+                      <Icon className={cn("w-5 h-5 shrink-0", item.highlight ? "text-primary-foreground" : active && "text-primary")} />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                       {!collapsed && item.badge && (
-                        <span className="ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                        <span className={cn(
+                          "ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+                          item.highlight ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary",
+                        )}>
                           {item.badge}
                         </span>
                       )}
-                      {active && (
+                      {!item.highlight && active && (
                         <span className={cn(
                           "absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-full bg-primary",
-                          collapsed && "right-0.5"
+                          collapsed && "right-0.5",
                         )} />
                       )}
+                    </>
+                  );
+                  return item.external && item.href ? (
+                    <a key={item.to} href={item.href} target="_blank" rel="noopener noreferrer" className={cls}>
+                      {inner}
+                    </a>
+                  ) : (
+                    <Link key={item.to} to={item.to} className={cls}>
+                      {inner}
                     </Link>
                   );
                 })}
@@ -379,19 +407,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* ── Mobile bottom nav ─────────────── */}
           <nav className="lg:hidden sticky bottom-0 z-30 bg-background/90 backdrop-blur-xl border-t flex items-center justify-around py-1.5 px-2 safe-area-bottom">
-            {filteredNav.flatMap((g) => g.items).slice(0, 5).map((item) => {
+            {filteredNav.flatMap((g) => g.items).filter((item) => item.bottomNav !== false).slice(0, 6).map((item) => {
               const active = pathname === item.to || pathname.startsWith(item.to + "/");
               const Icon = item.icon;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    "flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl text-[10px] font-medium transition-colors",
-                    active ? "text-primary" : "text-muted-foreground",
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
+              const cls = cn(
+                "flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl text-[10px] font-medium transition-colors",
+                item.highlight ? "text-primary font-semibold" : active ? "text-primary" : "text-muted-foreground",
+              );
+              return item.external && item.href ? (
+                <a key={item.to} href={item.href} target="_blank" rel="noopener noreferrer" className={cls}>
+                  <Icon className={cn("w-5 h-5", item.highlight && "text-primary")} />
+                  <span className="truncate max-w-[60px] text-center">{item.label}</span>
+                </a>
+              ) : (
+                <Link key={item.to} to={item.to} className={cls}>
+                  <Icon className={cn("w-5 h-5", item.highlight && "text-primary")} />
                   <span className="truncate max-w-[60px] text-center">{item.label}</span>
                 </Link>
               );
